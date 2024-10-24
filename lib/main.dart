@@ -1,33 +1,32 @@
-// ignore_for_file: prefer_const_constructors
-
-import 'package:antarkanma/pages/Home/main_page.dart';
-import 'package:antarkanma/pages/sign_in_page.dart';
-import 'package:antarkanma/pages/sign_up_page.dart';
-import 'package:antarkanma/pages/splash_page.dart';
+import 'package:antarkanma/app/routes/app_pages.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 
-void main() {
+import 'app/constants/app_theme.dart';
+import 'app/constants/app_strings.dart';
+import 'app/bindings/initial_binding.dart';
+import 'package:get_storage/get_storage.dart';
+
+Future<void> main() async {
+  Get.testMode = true;
+  await GetStorage.init();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    debugDefaultTargetPlatformOverride =
-        TargetPlatform.android; // atau TargetPlatform.iOS
-    return MaterialApp(
+    return GetMaterialApp(
+      title: AppStrings.appName,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system, // atau ThemeMode.light / ThemeMode.dark
+      initialBinding: InitialBinding(),
+      initialRoute: Routes.splash,
+      getPages: AppPages.routes,
       debugShowCheckedModeBanner: false,
-      title: 'AnatarkanMa',
-      routes: {
-        '/': (context) => const SplashPage(),
-        '/sign-in': (context) => SignInPage(),
-        '/sign-up': (context) => SignUpPage(),
-        '/home': (context) => MainPage(),
-      },
     );
   }
 }

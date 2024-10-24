@@ -1,11 +1,15 @@
+import 'package:antarkanma/app/controllers/auth_controller.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.find<AuthController>();
+
     Widget header() {
       return AppBar(
         automaticallyImplyLeading: false,
@@ -116,6 +120,30 @@ class ProfilePage extends StatelessWidget {
               menuItem('Kebijakan & Privasi'),
               menuItem('Ketentuan Layanan'),
               menuItem('Rating Aplikasi'),
+              Spacer(),
+              Container(
+                width: double.infinity,
+                margin: EdgeInsets.only(bottom: Dimenssions.height30),
+                child: ElevatedButton(
+                  onPressed: () => authController.logout(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding:
+                        EdgeInsets.symmetric(vertical: Dimenssions.height15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(Dimenssions.radius15),
+                    ),
+                  ),
+                  child: Text(
+                    'Logout',
+                    style: primaryTextStyle.copyWith(
+                      fontSize: Dimenssions.font16,
+                      fontWeight: medium,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

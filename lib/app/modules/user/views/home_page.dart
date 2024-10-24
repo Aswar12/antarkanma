@@ -1,6 +1,6 @@
 // ignore_for_file: use_full_hex_values_for_flutter_colors
 
-import 'package:antarkanma/pages/widget/product_tile.dart';
+import 'package:antarkanma/app/widgets/product_tile.dart';
 import 'package:antarkanma/theme.dart';
 
 import 'package:flutter/material.dart';
