@@ -1,4 +1,5 @@
 import 'package:antarkanma/app/controllers/auth_controller.dart';
+import 'package:antarkanma/app/widgets/logout_confirmation_dialog.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -120,12 +121,12 @@ class ProfilePage extends StatelessWidget {
               menuItem('Kebijakan & Privasi'),
               menuItem('Ketentuan Layanan'),
               menuItem('Rating Aplikasi'),
-              Spacer(),
+              const Spacer(),
               Container(
                 width: double.infinity,
                 margin: EdgeInsets.only(bottom: Dimenssions.height30),
                 child: ElevatedButton(
-                  onPressed: () => authController.logout(),
+                  onPressed: () => Get.dialog(const LogoutConfirmationDialog()),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     padding:
@@ -143,7 +144,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                 ),
-              ),
+              )
             ],
           ),
         ),

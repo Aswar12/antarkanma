@@ -28,11 +28,26 @@ class CustomInputField extends StatefulWidget {
 class _CustomInputFieldState extends State<CustomInputField> {
   late bool _obscureText;
   bool _isFocused = false;
+  bool _hasText = false;
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.initialObscureText;
+    _hasText = widget.controller.text.isNotEmpty;
+    widget.controller.addListener(_updateHasText);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_updateHasText);
+    super.dispose();
+  }
+
+  void _updateHasText() {
+    setState(() {
+      _hasText = widget.controller.text.isNotEmpty;
+    });
   }
 
   void _toggleVisibility() {
@@ -62,7 +77,9 @@ class _CustomInputFieldState extends State<CustomInputField> {
               color: backgroundColor2,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _isFocused ? logoColorSecondary : Colors.transparent,
+                color: (_isFocused || _hasText)
+                    ? logoColorSecondary
+                    : Colors.transparent,
                 width: 2,
               ),
             ),
@@ -72,7 +89,9 @@ class _CustomInputFieldState extends State<CustomInputField> {
                 Image.asset(
                   widget.iconPath,
                   width: 17,
-                  color: _isFocused ? logoColorSecondary : Colors.grey,
+                  color: (_isFocused || _hasText)
+                      ? logoColorSecondary
+                      : Colors.grey,
                 ),
                 SizedBox(width: 16),
                 Expanded(
@@ -103,7 +122,9 @@ class _CustomInputFieldState extends State<CustomInputField> {
                       padding: EdgeInsets.only(right: 16),
                       child: Icon(
                         _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: _isFocused ? logoColorSecondary : Colors.grey,
+                        color: (_isFocused || _hasText)
+                            ? logoColorSecondary
+                            : Colors.grey,
                       ),
                     ),
                   ),

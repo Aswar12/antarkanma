@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 class AuthProvider {
   final Dio _dio = Dio();
-  final String baseUrl = 'http://192.168.177.93:8000/api';
+  final String baseUrl = 'http://192.168.1.17:8000/api';
 
   AuthProvider() {
     _setupBaseOptions();

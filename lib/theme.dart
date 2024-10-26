@@ -64,7 +64,9 @@ TextStyle blackTextStyle = GoogleFonts.palanquinDark(
 TextStyle alertTextStyle = GoogleFonts.palanquinDark(
   color: alertColor,
 );
-
+TextStyle textwhite = GoogleFonts.palanquinDark(
+  color: backgroundColor1,
+);
 TextStyle primaryTextOrange = GoogleFonts.palanquinDark(
   color: logoColorSecondary,
 );
@@ -109,6 +111,7 @@ class Dimenssions {
   static double height95 = screenHeight / 6;
   static double height100 = screenHeight / 5.53;
   static double height105 = screenHeight / 5.14;
+
   static double height150 = screenHeight / 5.6;
   static double height180 = screenHeight / 4.44;
   static double height200 = screenHeight / 3.84;
@@ -140,9 +143,17 @@ class Dimenssions {
   static double width95 = screenHeight / 6;
   static double width100 = screenHeight / 5.53;
   static double width105 = screenHeight / 5.14;
+  static double width110 = screenHeight / 4.76;
+  static double width120 = screenHeight / 4.44;
+  static double width125 = screenHeight / 4.24;
+  static double width130 = screenHeight / 3.97;
+  static double width135 = screenHeight / 3.77;
+  static double width140 = screenHeight / 3.59;
+
   static double width150 = screenHeight / 5.64;
 
   static double font10 = screenHeight / 85.33;
+  static double font12 = screenHeight / 70.28;
   static double font14 = screenHeight / 62;
   static double font16 = screenHeight / 53.75;
   static double font18 = screenHeight / 47.78;
@@ -158,6 +169,7 @@ class Dimenssions {
 
   //iconSIze
 
+  static double iconSize20 = screenHeight / 42.2;
   static double iconSize24 = screenHeight / 35.16;
   static double iconSize16 = screenHeight / 52.75;
   //list view size

@@ -1,11 +1,10 @@
 // lib/app/controllers/user_controller.dart
 
 import 'package:get/get.dart';
-import '../services/api_service.dart';
+
 import '../services/storage_service.dart';
 
 class UserController extends GetxController {
-  final ApiService _apiService = Get.find<ApiService>();
   final StorageService _storage = StorageService.instance;
 
   final Rx<Map<String, dynamic>> user = Rx<Map<String, dynamic>>({});
@@ -30,8 +29,6 @@ class UserController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      final response = await _apiService.updateUserProfile(userData);
-
       if (response.status.isOk) {
         user.value = response.body;
         await _storage.saveUser(response.body);
@@ -53,7 +50,7 @@ class UserController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      final response = await _apiService.getUserProfile();
+      final response = await _productService.getUserProfile();
 
       if (response.status.isOk) {
         user.value = response.body;
@@ -75,7 +72,7 @@ class UserController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      await _apiService.logout();
+      await _productService.logout();
       await _storage.clearAuth();
 
       user.value = {};
