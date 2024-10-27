@@ -1,7 +1,7 @@
 // lib/app/modules/user/bindings/user_binding.dart
 
 import 'package:antarkanma/app/controllers/homepage_controller.dart';
-import 'package:antarkanma/app/controllers/product_detail.controller.dart';
+import 'package:antarkanma/app/controllers/product_detail_controller.dart';
 import 'package:antarkanma/app/controllers/user_main_controller.dart';
 import 'package:get/get.dart';
 import 'package:antarkanma/app/controllers/user_controller.dart';
