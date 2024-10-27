@@ -13,6 +13,7 @@ import 'package:antarkanma/app/modules/user/views/order_page.dart';
 import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
 import 'package:antarkanma/app/modules/user/views/profile_page.dart';
 import 'package:antarkanma/app/modules/user/views/user_main_page.dart';
+import 'package:get/get.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 
 abstract class Routes {
@@ -45,7 +46,10 @@ class AppPages {
   static final routes = [
     GetPage(
       name: Routes.productDetail,
-      page: () => ProductDetailPage(),
+      page: () {
+        final product = Get.arguments;
+        return ProductDetailPage(product: product);
+      },
       binding: UserBinding(),
     ),
     GetPage(
