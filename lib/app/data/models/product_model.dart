@@ -9,7 +9,8 @@ class ProductModel {
   final String description;
   final List<String> imageUrls;
   final double price;
-  final String? tags; // Opsional dari API
+  final String? status;
+  // Opsional dari API
   final MerchantModel? merchant; // Opsional dari API
   final CategoryModel? category; // Opsional dari API
   final DateTime? createdAt; // Opsional dari API
@@ -21,7 +22,7 @@ class ProductModel {
     required this.description,
     required this.imageUrls,
     required this.price,
-    this.tags,
+    this.status,
     this.merchant,
     this.category,
     this.createdAt,
@@ -40,7 +41,7 @@ class ProductModel {
               .map<String>((gallery) => gallery['url'] as String)
               .toList()
           : [],
-      tags: json['tags'] as String?,
+      status: json['status'] as String?,
       merchant: json['merchant'] != null
           ? MerchantModel.fromJson(json['merchant'])
           : null,
@@ -77,7 +78,7 @@ class ProductModel {
       'name': name,
       'description': description,
       'price': price,
-      'tags': tags,
+      'status': status,
       'merchant': merchant?.toJson(),
       'category': category?.toJson(),
       'galleries': imageUrls.map((url) => {'url': url}).toList(),
@@ -93,7 +94,7 @@ class ProductModel {
     String? description,
     List<String>? imageUrls,
     double? price,
-    String? tags,
+    String? status,
     MerchantModel? merchant,
     CategoryModel? category,
     DateTime? createdAt,
@@ -105,7 +106,7 @@ class ProductModel {
       description: description ?? this.description,
       imageUrls: imageUrls ?? this.imageUrls,
       price: price ?? this.price,
-      tags: tags ?? this.tags,
+      status: status ?? this.status,
       merchant: merchant ?? this.merchant,
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,

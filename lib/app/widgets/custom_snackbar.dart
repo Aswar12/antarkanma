@@ -6,6 +6,8 @@ void showCustomSnackbar({
   required String title,
   required String message,
   bool isError = false,
+  Color? backgroundColor,
+  SnackPosition? snackPosition,
 }) {
   Get.snackbar(
     title,
