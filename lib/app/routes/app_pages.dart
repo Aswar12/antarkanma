@@ -13,6 +13,7 @@ import 'package:antarkanma/app/modules/user/views/order_page.dart';
 import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
 import 'package:antarkanma/app/modules/user/views/profile_page.dart';
 import 'package:antarkanma/app/modules/user/views/user_main_page.dart';
+import 'package:get/get.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 
 abstract class Routes {
@@ -44,14 +45,8 @@ class AppPages {
 
   static final routes = [
     GetPage(
-    GetPage(
-    GetPage(
       name: Routes.productDetail,
       page: () => const ProductDetailPage(),
-      binding: UserBinding(),
-    ),
-      binding: UserBinding(),
-    ),
       binding: UserBinding(),
     ),
     GetPage(
@@ -68,8 +63,6 @@ class AppPages {
       page: () => SignUpPage(),
       binding: AuthBinding(),
     ),
-
-    // User Routes
     GetPage(
       name: Routes.home,
       page: () => const UserMainPage(),
@@ -89,25 +82,5 @@ class AppPages {
         ),
       ],
     ),
-
-    // Merchant Routes
-    // GetPage(
-    //   name: Routes.merchantHome,
-    //   page: () => const MerchantMainPage(),
-    //   binding: MerchantBinding(),
-    //   children: [
-    //     // Sub-routes untuk merchant jika ada
-    //   ],
-    // ),
-
-    // Courier Routes
-    // GetPage(
-    //   name: Routes.courierHome,
-    //   page: () => const CourierMainPage(),
-    //   binding: CourierBinding(),
-    //   children: [
-    //     // Sub-routes untuk courier jika ada
-    //   ],
-    // ),
   ];
 }
