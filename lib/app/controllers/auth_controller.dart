@@ -1,4 +1,5 @@
 import 'package:antarkanma/app/routes/app_pages.dart';
+import 'package:antarkanma/app/services/storage_service.dart';
 import 'package:antarkanma/app/widgets/custom_snackbar.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,14 @@ class AuthController extends GetxController {
       TextEditingController(); // Kontroler untuk nomor telepon
   final RxBool isLoading = false.obs;
   final RxBool isPasswordHidden = true.obs;
+  final rememberMe = false.obs;
+  final StorageService _storageService = StorageService.instance;
+  @override
+  void onInit() {
+    super.onInit();
+    rememberMe.value = _storageService.getRememberMe();
+    print('Initial Remember Me Value: ${rememberMe.value}'); // Debug print
+  }
 
   void togglePasswordVisibility() =>
       isPasswordHidden.value = !isPasswordHidden.value;
@@ -28,12 +37,17 @@ class AuthController extends GetxController {
     isConfirmPasswordHidden.value = !isConfirmPasswordHidden.value;
   }
 
+  void toggleRememberMe() {
+    rememberMe.value = !rememberMe.value;
+  }
+
   Future<void> login() async {
     isLoading.value = true;
     try {
       final success = await _authService.login(
         identifierController.text,
         passwordController.text,
+        rememberMe: rememberMe.value,
       );
 
       if (!success) {

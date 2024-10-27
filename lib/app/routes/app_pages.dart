@@ -1,31 +1,42 @@
-// ignore_for_file: constant_identifier_names
+// lib/app/routes/app_pages.dart
 
-import 'package:antarkanma/app/modules/courier/views/courier_main_page.dart';
-import 'package:antarkanma/app/modules/merchant/views/merchant_main_page.dart';
-import 'package:antarkanma/app/modules/user/views/chat_page.dart';
-import 'package:antarkanma/app/modules/user/views/user_main_page.dart';
-import 'package:get/get.dart';
-import 'package:antarkanma/app/modules/splash/views/splash_page.dart';
+import 'package:antarkanma/app/modules/auth/auth_binding.dart';
 import 'package:antarkanma/app/modules/auth/views/sign_in_page.dart';
 import 'package:antarkanma/app/modules/auth/views/sign_up_page.dart';
-
-import 'package:antarkanma/app/modules/user/views/profile_page.dart';
-import 'package:antarkanma/app/modules/auth/auth_binding.dart';
+import 'package:antarkanma/app/modules/merchant/merchant_binding.dart';
+import 'package:antarkanma/app/modules/courier/courier_binding.dart';
+import 'package:antarkanma/app/modules/merchant/views/merchant_main_page.dart';
+import 'package:antarkanma/app/modules/splash/views/splash_page.dart';
 import 'package:antarkanma/app/modules/user/user_binding.dart';
+import 'package:antarkanma/app/modules/user/views/chat_page.dart';
+import 'package:antarkanma/app/modules/user/views/order_page.dart';
+import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
+import 'package:antarkanma/app/modules/user/views/profile_page.dart';
+import 'package:antarkanma/app/modules/user/views/user_main_page.dart';
+import 'package:get/get_navigation/src/routes/get_route.dart';
 
 abstract class Routes {
   static const splash = '/splash';
   static const login = '/login';
   static const register = '/register';
+
+  // User routes
   static const home = '/home';
-  static const profile = '/profile';
-  static const cart = '/cart';
-  static const order = '/order';
-  static const orderHistory = '/order-history';
-  static const productList = '/product-list';
-  static const merchantHome = '/merchant-home';
-  static const courierHome = '/courier-home';
-  static const chat = '/chat';
+  static const profile = '/home/profile';
+  static const chat = '/home/chat';
+  static const cart = '/home/cart';
+  static const order = '/home/order';
+  static const orderHistory = '/home/order-history';
+  static const productDetail = '/product-detail';
+  // Merchant routes
+  static const merchantHome = '/merchant';
+  static const merchantProducts = '/merchant/products';
+  static const merchantOrders = '/merchant/orders';
+
+  // Courier routes
+  static const courierHome = '/courier';
+  static const courierDeliveries = '/courier/deliveries';
+  static const courierHistory = '/courier/history';
 }
 
 class AppPages {
@@ -46,30 +57,46 @@ class AppPages {
       page: () => SignUpPage(),
       binding: AuthBinding(),
     ),
+
+    // User Routes
     GetPage(
       name: Routes.home,
-      page: () => UserMainPage(),
+      page: () => const UserMainPage(),
       binding: UserBinding(),
+      children: [
+        GetPage(
+          name: '/profile',
+          page: () => const ProfilePage(),
+        ),
+        GetPage(
+          name: '/chat',
+          page: () => const ChatPage(),
+        ),
+        GetPage(
+          name: '/order',
+          page: () => const OrderPage(),
+        ),
+      ],
     ),
-    GetPage(
-      name: Routes.profile,
-      page: () => const ProfilePage(),
-      binding: UserBinding(),
-    ),
-    GetPage(
-      name: Routes.chat,
-      page: () => const ChatPage(),
-      binding: UserBinding(),
-    ),
-    GetPage(
-      name: Routes.merchantHome,
-      page: () => const MerchantMainPage(), // Menambahkan MerchantMainPage
-      binding: UserBinding(), // Anda bisa menggunakan binding yang sesuai
-    ),
-    GetPage(
-      name: Routes.courierHome,
-      page: () => const CourierMainPage(), // Menambahkan CourierMainPage
-      binding: UserBinding(), // Anda bisa menggunakan binding yang sesuai
-    ),
+
+    // Merchant Routes
+    // GetPage(
+    //   name: Routes.merchantHome,
+    //   page: () => const MerchantMainPage(),
+    //   binding: MerchantBinding(),
+    //   children: [
+    //     // Sub-routes untuk merchant jika ada
+    //   ],
+    // ),
+
+    // Courier Routes
+    // GetPage(
+    //   name: Routes.courierHome,
+    //   page: () => const CourierMainPage(),
+    //   binding: CourierBinding(),
+    //   children: [
+    //     // Sub-routes untuk courier jika ada
+    //   ],
+    // ),
   ];
 }

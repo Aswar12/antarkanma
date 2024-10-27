@@ -30,7 +30,7 @@ class LogoutConfirmationDialog extends StatelessWidget {
             authController.logout();
           },
           child: Text(
-            'Logout',
+            'KeluarMi',
             style: textwhite,
           ),
         ),

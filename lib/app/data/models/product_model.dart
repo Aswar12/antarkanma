@@ -1,4 +1,7 @@
+import 'package:antarkanma/app/data/models/category_model.dart';
+import 'package:antarkanma/app/data/models/merchant_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 class ProductModel {
   final int? id; // Ditambahkan untuk API
@@ -7,7 +10,7 @@ class ProductModel {
   final List<String> imageUrls;
   final double price;
   final String? tags; // Opsional dari API
-  final KedaiModel? kedai; // Opsional dari API
+  final MerchantModel? merchant; // Opsional dari API
   final CategoryModel? category; // Opsional dari API
   final DateTime? createdAt; // Opsional dari API
   final DateTime? updatedAt; // Opsional dari API
@@ -19,7 +22,7 @@ class ProductModel {
     required this.imageUrls,
     required this.price,
     this.tags,
-    this.kedai,
+    this.merchant,
     this.category,
     this.createdAt,
     this.updatedAt,
@@ -38,7 +41,9 @@ class ProductModel {
               .toList()
           : [],
       tags: json['tags'] as String?,
-      kedai: json['kedai'] != null ? KedaiModel.fromJson(json['kedai']) : null,
+      merchant: json['merchant'] != null
+          ? MerchantModel.fromJson(json['merchant'])
+          : null,
       category: json['category'] != null
           ? CategoryModel.fromJson(json['category'])
           : null,
@@ -73,7 +78,7 @@ class ProductModel {
       'description': description,
       'price': price,
       'tags': tags,
-      'kedai': kedai?.toJson(),
+      'merchant': merchant?.toJson(),
       'category': category?.toJson(),
       'galleries': imageUrls.map((url) => {'url': url}).toList(),
       'created_at': createdAt?.toIso8601String(),
@@ -89,7 +94,7 @@ class ProductModel {
     List<String>? imageUrls,
     double? price,
     String? tags,
-    MerchantModel? kedai,
+    MerchantModel? merchant,
     CategoryModel? category,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -101,7 +106,7 @@ class ProductModel {
       imageUrls: imageUrls ?? this.imageUrls,
       price: price ?? this.price,
       tags: tags ?? this.tags,
-      kedai: kedai ?? this.kedai,
+      merchant: merchant ?? this.merchant,
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -127,6 +132,15 @@ class ProductModel {
         description.hashCode ^
         imageUrls.hashCode ^
         price.hashCode;
+  }
+
+  String get formattedPrice {
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    return formatter.format(price);
   }
 }
 

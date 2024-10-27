@@ -28,6 +28,7 @@ class SignInPage extends GetView<AuthController> {
                   emailInput(),
                   SizedBox(height: Dimenssions.height15),
                   passwordInput(),
+                  rememberMeCheckbox(),
                   signButton(),
                   const Spacer(),
                   footer(),
@@ -35,6 +36,32 @@ class SignInPage extends GetView<AuthController> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget rememberMeCheckbox() {
+    return Obx(
+      () => Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: Dimenssions.width10,
+        ),
+        child: CheckboxListTile(
+          title: Text(
+            'Ingat Saya',
+            style: primaryTextStyle.copyWith(
+              fontSize: 14,
+              fontWeight: medium,
+            ),
+          ),
+          value: controller.rememberMe.value,
+          onChanged: (value) => controller.toggleRememberMe(),
+          controlAffinity: ListTileControlAffinity.trailing, // Ubah ke trailing
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          activeColor: logoColorSecondary,
+          checkColor: Colors.white,
         ),
       ),
     );
@@ -90,8 +117,8 @@ class SignInPage extends GetView<AuthController> {
     return Container(
       height: AppValues.height50,
       width: double.infinity,
-      margin: const EdgeInsets.only(
-        top: AppValues.height30,
+      margin: EdgeInsets.only(
+        top: Dimenssions.height10,
         left: AppValues.height10,
         right: AppValues.height10,
       ),

@@ -1,3 +1,5 @@
+// lib/app/widgets/product_tile.dart
+
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -10,7 +12,7 @@ class ProductTile extends StatelessWidget {
   final int duration;
   final double rating;
   final int reviews;
-  final VoidCallback? onTap;
+  final Function()? onTap;
 
   const ProductTile({
     Key? key,
@@ -24,102 +26,161 @@ class ProductTile extends StatelessWidget {
     required this.reviews,
     this.onTap,
   }) : super(key: key);
+  ImageProvider _getImageProvider(String imageUrl) {
+    if (imageUrl.startsWith('http')) {
+      return NetworkImage(imageUrl) as ImageProvider;
+    } else {
+      return AssetImage(imageUrl) as ImageProvider;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 120, // Fixed height for the container
-        margin: EdgeInsets.symmetric(
-          horizontal: Dimenssions.width30,
-          vertical: Dimenssions.height10,
+        margin: EdgeInsets.only(
+          left: Dimenssions.width20,
+          right: Dimenssions.width20,
+          bottom: Dimenssions.height20,
         ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(Dimenssions.radius20),
           color: Colors.white,
+          borderRadius: BorderRadius.circular(Dimenssions.radius15),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 2,
+              spreadRadius: 1,
               blurRadius: 5,
-              offset: Offset(0, 3),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
           children: [
-            // Product Image
-            ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(Dimenssions.radius20),
-                bottomLeft: Radius.circular(Dimenssions.radius20),
+            Container(
+              width: Dimenssions.width90,
+              height: Dimenssions.height90,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(Dimenssions.radius15),
+                  bottomLeft: Radius.circular(Dimenssions.radius15),
+                ),
               ),
-              child: Image.asset(
-                imageUrl,
-                width: Dimenssions.height150,
-                height: Dimenssions.height150,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 120,
-                    height: 120,
-                    color: Colors.grey[300],
-                    child: Icon(Icons.error, color: Colors.red),
-                  );
-                },
+              child: ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(Dimenssions.radius15),
+                  bottomLeft: Radius.circular(Dimenssions.radius15),
+                ),
+                child: imageUrl.startsWith('http')
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/image_shoes.png',
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                      ),
               ),
             ),
-            // Product Details
             Expanded(
-              child: Padding(
+              child: Container(
                 padding: EdgeInsets.all(Dimenssions.height10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       name,
                       style: primaryTextStyle.copyWith(
-                        fontSize: Dimenssions.font14,
-                        fontWeight: semiBold,
+                        fontSize: Dimenssions.font16,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    SizedBox(height: Dimenssions.height5),
                     Text(
                       'Rp ${price.toStringAsFixed(0)}',
                       style: priceTextStyle.copyWith(
-                        fontSize: Dimenssions.font12,
+                        fontSize: Dimenssions.font14,
                         fontWeight: medium,
                       ),
                     ),
+                    SizedBox(height: Dimenssions.height5),
                     Row(
                       children: [
-                        Icon(Icons.store,
-                            color: backgroundColor6, size: Dimenssions.font14),
+                        Icon(
+                          Icons.store,
+                          size: Dimenssions.iconSize16,
+                          color: Colors.blue,
+                        ),
                         SizedBox(width: Dimenssions.width5),
-                        Expanded(
-                          child: Text(
-                            merchantName,
-                            style: secondaryTextStyle.copyWith(
-                              fontSize: Dimenssions.font10,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          merchantName,
+                          style: subtitleTextStyle.copyWith(
+                            fontSize: Dimenssions.font12,
                           ),
                         ),
                       ],
                     ),
+                    SizedBox(height: Dimenssions.height5),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildInfoItem(
-                            Icons.location_on,
-                            '${distance.toStringAsFixed(1)} km',
-                            backgroundColor6),
-                        _buildInfoItem(Icons.access_time_rounded,
-                            '$duration min', backgroundColor6),
-                        _buildRatingItem(rating, reviews),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: Dimenssions.iconSize16,
+                              color: Colors.green,
+                            ),
+                            SizedBox(width: Dimenssions.width5),
+                            Text(
+                              '$distance km',
+                              style: subtitleTextStyle.copyWith(
+                                fontSize: Dimenssions.font12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: Dimenssions.iconSize16,
+                              color: Colors.red,
+                            ),
+                            SizedBox(width: Dimenssions.width5),
+                            Text(
+                              '$duration min',
+                              style: subtitleTextStyle.copyWith(
+                                fontSize: Dimenssions.font12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: Dimenssions.iconSize16,
+                              color: Colors.amber,
+                            ),
+                            SizedBox(width: Dimenssions.width5),
+                            Text(
+                              '$rating ($reviews)',
+                              style: subtitleTextStyle.copyWith(
+                                fontSize: Dimenssions.font12,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -129,32 +190,6 @@ class ProductTile extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildInfoItem(IconData icon, String text, Color color) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: Dimenssions.iconSize16),
-        const SizedBox(width: 2),
-        Text(
-          text,
-          style: secondaryTextStyle.copyWith(fontSize: Dimenssions.font10),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRatingItem(double rating, int reviews) {
-    return Row(
-      children: [
-        Icon(Icons.star, color: Colors.amber, size: Dimenssions.font14),
-        const SizedBox(width: 2),
-        Text(
-          '$rating ($reviews)',
-          style: secondaryTextStyle.copyWith(fontSize: Dimenssions.font10),
-        ),
-      ],
     );
   }
 }

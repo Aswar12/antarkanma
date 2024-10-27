@@ -16,28 +16,55 @@ class AuthService extends GetxService {
   void onInit() {
     super.onInit();
     checkLoginStatus();
+    tryAutoLogin();
   }
 
-  void checkLoginStatus() {
+  Future<void> checkLoginStatus() async {
     final token = _storageService.getToken();
     final userData = _storageService.getUser();
 
     if (token != null && userData != null) {
-      isLoggedIn.value = true;
-      currentUser.value = userData;
-      _redirectBasedOnRole();
-    } else {
-      isLoggedIn.value = false;
-      currentUser.value = {};
+      // Verifikasi token dengan server
+      final isValidToken = await verifyToken(token);
+      if (isValidToken) {
+        isLoggedIn.value = true;
+        currentUser.value = userData;
+        _redirectBasedOnRole();
+      } else {
+        // Token tidak valid, coba auto login
+        await tryAutoLogin();
+      }
+    }
+  }
+
+  Future<void> tryAutoLogin() async {
+    if (!isLoggedIn.value && _storageService.getRememberMe()) {
+      final credentials = _storageService.getSavedCredentials();
+      if (credentials != null) {
+        await login(
+          credentials['identifier']!,
+          credentials['password']!,
+          rememberMe: true,
+          isAutoLogin: true,
+        );
+      }
+    }
+  }
+
+  Future<bool> verifyToken(String token) async {
+    try {
+      final response = await _authProvider.refreshToken(token);
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error verifying token: $e');
+      return false;
     }
   }
 
   Future<bool> refreshToken() async {
     try {
       final currentToken = _storageService.getToken();
-      if (currentToken == null) {
-        return false;
-      }
+      if (currentToken == null) return false;
 
       final response = await _authProvider.refreshToken(currentToken);
       if (response.statusCode == 200) {
@@ -52,35 +79,30 @@ class AuthService extends GetxService {
     }
   }
 
-  Future<void> checkAndRefreshToken() async {
-    // Implementasi logika untuk memeriksa apakah token perlu diperbarui
-    // Misalnya, berdasarkan waktu kedaluwarsa token
-    bool needsRefresh = true; // Ganti dengan logika yang sesuai
-
-    if (needsRefresh) {
-      bool refreshSuccess = await refreshToken();
-      if (!refreshSuccess) {
-        // Token tidak dapat diperbarui, mungkin perlu logout
-        await logout();
-      }
-    }
-  }
-
-  Future<bool> login(String identifier, String password) async {
+  Future<bool> login(
+    String identifier,
+    String password, {
+    bool rememberMe = false,
+    bool isAutoLogin = false,
+  }) async {
     try {
-      final validationError = Validators.validateIdentifier(identifier);
-      if (validationError != null) {
-        showCustomSnackbar(
-            title: 'Error', message: validationError, isError: true);
-        return false;
+      if (!isAutoLogin) {
+        final validationError = Validators.validateIdentifier(identifier);
+        if (validationError != null) {
+          showCustomSnackbar(
+              title: 'Error', message: validationError, isError: true);
+          return false;
+        }
       }
 
       final response = await _authProvider.login(identifier, password);
       if (response.statusCode != 200) {
-        showCustomSnackbar(
-            title: 'Login Gagal',
-            message: response.data['meta']['message'] ?? 'Terjadi kesalahan',
-            isError: true);
+        if (!isAutoLogin) {
+          showCustomSnackbar(
+              title: 'Login Gagal',
+              message: response.data['meta']['message'] ?? 'Terjadi kesalahan',
+              isError: true);
+        }
         return false;
       }
 
@@ -90,20 +112,40 @@ class AuthService extends GetxService {
       if (token != null) {
         await _storageService.saveToken(token);
         await _storageService.saveUser(userData);
+
+        // Simpan kredensial jika remember me aktif
+        if (rememberMe) {
+          await _storageService.saveRememberMe(true);
+          await _storageService.saveCredentials(identifier, password);
+        } else {
+          await _storageService.clearCredentials();
+        }
+
         currentUser.value = userData;
         isLoggedIn.value = true;
         _redirectBasedOnRole();
+
+        if (!isAutoLogin) {
+          showCustomSnackbar(
+            title: 'Sukses',
+            message: 'Login berhasil',
+          );
+        }
         return true;
-      } else {
+      }
+
+      if (!isAutoLogin) {
         showCustomSnackbar(
             title: 'Error', message: 'Token tidak valid.', isError: true);
-        return false;
       }
+      return false;
     } catch (e) {
-      showCustomSnackbar(
-          title: 'Error',
-          message: 'Gagal login: ${e.toString()}',
-          isError: true);
+      if (!isAutoLogin) {
+        showCustomSnackbar(
+            title: 'Error',
+            message: 'Gagal login: ${e.toString()}',
+            isError: true);
+      }
       return false;
     }
   }
@@ -136,13 +178,10 @@ class AuthService extends GetxService {
           isLoggedIn.value = true;
           _redirectBasedOnRole();
           return true;
-        } else {
-          showCustomSnackbar(
-              title: 'Error',
-              message: 'Data login tidak valid.',
-              isError: true);
-          return false;
         }
+        showCustomSnackbar(
+            title: 'Error', message: 'Data login tidak valid.', isError: true);
+        return false;
       }
 
       showCustomSnackbar(
@@ -177,12 +216,18 @@ class AuthService extends GetxService {
   }
 
   Future<bool> changePassword({
-    required String token,
     required String currentPassword,
     required String newPassword,
     required String confirmPassword,
   }) async {
     try {
+      final token = _storageService.getToken();
+      if (token == null) {
+        showCustomSnackbar(
+            title: 'Error', message: 'Token tidak valid', isError: true);
+        return false;
+      }
+
       if (newPassword.length < 6) {
         showCustomSnackbar(
             title: 'Error',
@@ -206,6 +251,17 @@ class AuthService extends GetxService {
       });
 
       if (response.statusCode == 200) {
+        // Jika user menggunakan remember me, update password yang tersimpan
+        if (_storageService.getRememberMe()) {
+          final credentials = _storageService.getSavedCredentials();
+          if (credentials != null) {
+            await _storageService.saveCredentials(
+              credentials['identifier']!,
+              newPassword,
+            );
+          }
+        }
+
         showCustomSnackbar(
             title: 'Sukses', message: 'Password berhasil diubah');
         return true;
@@ -225,8 +281,15 @@ class AuthService extends GetxService {
     }
   }
 
-  Future<bool> deleteAccount(String token) async {
+  Future<bool> deleteAccount() async {
     try {
+      final token = _storageService.getToken();
+      if (token == null) {
+        showCustomSnackbar(
+            title: 'Error', message: 'Token tidak valid', isError: true);
+        return false;
+      }
+
       final response = await _authProvider.deleteAccount(token);
       if (response.statusCode == 200) {
         showCustomSnackbar(title: 'Sukses', message: 'Akun berhasil dihapus');
@@ -250,7 +313,12 @@ class AuthService extends GetxService {
 
   Future<void> logout() async {
     try {
-      await _authProvider.logout(_storageService.getToken()!);
+      final token = _storageService.getToken();
+      if (token != null) {
+        await _authProvider.logout(token);
+      }
+    } catch (e) {
+      print('Error during logout: $e');
     } finally {
       await _clearAuthData();
       Get.offAllNamed(Routes.login);
@@ -259,51 +327,48 @@ class AuthService extends GetxService {
 
   Future<void> _clearAuthData() async {
     await _storageService.clearAuth();
+    // Opsional: Bersihkan remember me dan kredensial tersimpan
+    // Hapus komentar jika ingin membersihkan data remember me saat logout
+    // await _storageService.clearCredentials();
     isLoggedIn.value = false;
     currentUser.value = {};
   }
 
-  String? getToken() => _storageService.getToken();
-
-  Map<String, dynamic>? getUser() => currentUser.value;
-
-  String get userName => currentUser.value['name'] ?? '';
-
-  String get userEmail => currentUser.value['email'] ?? '';
-  String get userPhone => currentUser.value['phone_number'] ?? '';
-
-  String get userRole => currentUser.value['roles'] ?? '';
-
-  bool get isMerchant => userRole == 'MERCHANT';
-
-  bool get isCourier => userRole == 'COURIER';
-
-  bool get isUser => userRole == 'USER';
-
-  int? get userId => currentUser.value['id'];
-
   Future<bool> updateProfile({
-    required String token,
     required String name,
     required String email,
-    // Tambahkan parameter lain sesuai kebutuhan
+    String? phoneNumber,
   }) async {
     try {
-      final response = await _authProvider.updateProfile(token, {
+      final token = _storageService.getToken();
+      if (token == null) {
+        showCustomSnackbar(
+            title: 'Error', message: 'Token tidak valid', isError: true);
+        return false;
+      }
+
+      final updateData = {
         'name': name,
         'email': email,
-        // Tambahkan data lain yang ingin diperbarui
-      });
+        if (phoneNumber != null) 'phone_number': phoneNumber,
+      };
+
+      final response = await _authProvider.updateProfile(token, updateData);
 
       if (response.statusCode == 200) {
-        showCustomSnackbar(
-            title: 'Sukses', message: 'Profil berhasil diperbarui');
-        // Perbarui data pengguna di penyimpanan lokal
+        // Update local user data
         final updatedUser = currentUser.value;
         updatedUser['name'] = name;
         updatedUser['email'] = email;
+        if (phoneNumber != null) {
+          updatedUser['phone_number'] = phoneNumber;
+        }
+
         await _storageService.saveUser(updatedUser);
         currentUser.value = updatedUser;
+
+        showCustomSnackbar(
+            title: 'Sukses', message: 'Profil berhasil diperbarui');
         return true;
       }
 
@@ -332,7 +397,21 @@ class AuthService extends GetxService {
     }
   }
 
-  // Method untuk dispose
+  // Getter Methods
+  String? getToken() => _storageService.getToken();
+  Map<String, dynamic>? getUser() => currentUser.value;
+  String get userName => currentUser.value['name'] ?? '';
+  String get userEmail => currentUser.value['email'] ?? '';
+  String get userPhone => currentUser.value['phone_number'] ?? '';
+  String get userRole => currentUser.value['roles'] ?? '';
+  bool get isMerchant => userRole == 'MERCHANT';
+  bool get isCourier => userRole == 'COURIER';
+  bool get isUser => userRole == 'USER';
+  int? get userId => currentUser.value['id'];
+
+  // Method untuk mengecek status remember me
+  bool get isRememberMeEnabled => _storageService.getRememberMe();
+
   @override
   void onClose() {
     currentUser.close();
