@@ -208,7 +208,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildPageItem(int index) {
+    if (index < 0 || index >= controller.products.length) {
+      print('Invalid index: $index');
+      return Container(); // Return an empty container if index is out of bounds
+    }
     var product = controller.products[index];
+    if (product == null) {
+      print('Product at index $index is null');
+      return Container(); // Return an empty container if product is null
+    }
     Matrix4 matrix = Matrix4.identity();
     if (index == _currPageValue.floor()) {
       var currScale = 1 - (_currPageValue - index) * (1 - _scaleFactor);
@@ -234,8 +242,13 @@ class _HomePageState extends State<HomePage> {
 
     return GestureDetector(
       onTap: () {
-        print('Navigating to product detail: ${product.name}');
-        Get.to(() => ProductDetailPage(product: product));
+        if (product != null) {
+          print('Navigating to product detail: ${product.name ?? 'Unknown Product'}');
+          Get.to(() => ProductDetailPage(product: product));
+        } else {
+          print('Product is null, cannot navigate');
+          Get.snackbar('Error', 'Product details not available');
+        }
       },
       child: Transform(
         transform: matrix,
