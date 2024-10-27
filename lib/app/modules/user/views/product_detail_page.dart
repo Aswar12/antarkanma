@@ -1,6 +1,7 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:antarkanma/app/controllers/product_detail.controller.dart';
+import 'package:antarkanma/app/controllers/product_detail_controller.dart';
 import 'package:antarkanma/app/data/models/product_model.dart';
 
 class ProductDetailPage extends GetView<ProductDetailController> {
@@ -27,7 +28,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
         final product = controller.product.value;
 
         if (product == null) {
-          return const Center(child: Text('Product not found'));
+          return const Center(child: CircularProgressIndicator());
         }
 
         return SingleChildScrollView(

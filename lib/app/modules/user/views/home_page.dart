@@ -199,7 +199,8 @@ class _HomePageState extends State<HomePage> {
                       0, // Anda perlu menambahkan properti ini di MerchantModel
                   onTap: () {
                     print('Navigating to product detail: ${product?.name}');
-                    Get.toNamed(Routes.productDetail, arguments: {'product': product});
+                    Get.toNamed(Routes.productDetail,
+                        arguments: {'product': product});
                   },
                 ))
             .toList(),
@@ -243,8 +244,9 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () {
         if (product != null) {
-          print('Navigating to product detail: ${product.name ?? 'Unknown Product'}');
-          Get.toNamed(Routes.PRODUCT_DETAIL, arguments: product);
+          print(
+              'Navigating to product detail: ${product.name ?? 'Unknown Product'}');
+          Get.toNamed(Routes.productDetail, arguments: product);
         } else {
           print('Product is null, cannot navigate');
           Get.snackbar('Error', 'Product details not available');
