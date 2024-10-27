@@ -45,8 +45,11 @@ class AppPages {
   static final routes = [
     GetPage(
     GetPage(
+    GetPage(
       name: Routes.productDetail,
-      page: () => ProductDetailPage(),
+      page: () => const ProductDetailPage(),
+      binding: UserBinding(),
+    ),
       binding: UserBinding(),
     ),
       binding: UserBinding(),
