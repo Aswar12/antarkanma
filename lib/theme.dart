@@ -86,6 +86,7 @@ class Dimenssions {
       MediaQueryData.fromView(WidgetsBinding.instance.window).size.width;
 
   static double pageView = screenHeight / 2.64;
+
   static double pageViewContainer = screenHeight / 3.84;
   static double pageTextContainer = screenHeight / 7.03;
   //dynamic height padding and margin
@@ -120,7 +121,8 @@ class Dimenssions {
   static double height220 = screenHeight / 3.33;
   static double height230 = screenHeight / 3.13;
   static double height240 = screenHeight / 2.95;
-  static double height250 = screenHeight / 3.04;
+  static double height250 = screenHeight / 2.8;
+  static double height255 = screenHeight / 2.7;
 
   //dynamic width padding and margin
   static double width5 = screenHeight / 168.8;

@@ -1,10 +1,15 @@
-// ignore: unused_import
-import 'package:antarkanma/app/constants/app_colors.dart';
+import 'package:antarkanma/app/controllers/cart_controller.dart';
+import 'package:antarkanma/app/data/models/cart_item_model.dart';
+
+import 'package:antarkanma/app/data/models/product_review_model.dart';
+import 'package:antarkanma/app/routes/app_pages.dart';
 import 'package:antarkanma/app/utils/image_viewer_page.dart';
+import 'package:antarkanma/app/widgets/custom_snackbar.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:antarkanma/app/controllers/product_detail_controller.dart';
@@ -12,264 +17,976 @@ import 'package:antarkanma/app/data/models/product_model.dart';
 
 class ProductDetailPage extends GetView<ProductDetailController> {
   const ProductDetailPage({super.key});
+  void _addToCart() {
+    try {
+      print("Entering _addToCart");
+
+      // Validasi product dan merchant
+      if (controller.product.value == null) {
+        print("Product is null");
+        showCustomSnackbar(
+          title: 'Error',
+          message: 'Data produk tidak valid',
+          backgroundColor: Colors.red,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final merchant = controller.product.value.merchant;
+      if (merchant == null) {
+        print("Merchant is null");
+        showCustomSnackbar(
+          title: 'Error',
+          message: 'Data merchant tidak valid',
+          backgroundColor: Colors.red,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final cartController = Get.find<CartController>();
+
+      // Langsung menambahkan ke keranjang tanpa pengecekan canAddFromMerchant
+      cartController.addToCart(
+        controller.product.value,
+        controller.quantity.value,
+        selectedVariant: controller.selectedVariant.value,
+        merchant: merchant,
+      );
+
+      // Pesan sukses sudah ditangani di dalam addToCart, jadi tidak perlu ditambahkan di sini
+    } catch (e, stackTrace) {
+      print('Error adding to cart: $e');
+      print('Stack trace: $stackTrace');
+      showCustomSnackbar(
+        title: 'Error',
+        message: 'Terjadi kesalahan saat menambahkan ke keranjang',
+        backgroundColor: Colors.red,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void _buyNow() {
+    if (controller.validateCheckout()) {
+      final checkoutData = controller.getCheckoutData();
+      Get.toNamed('/checkout', arguments: {
+        'items': [],
+        'type': 'direct_buy',
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final product = Get.arguments as ProductModel;
-
     controller.setProduct(product);
 
-    return Scaffold(
-      backgroundColor: backgroundColor5,
-      appBar: AppBar(
-        title:
-            Obx(() => Text(controller.product.value.name ?? 'Detail Produk')),
-        backgroundColor: transparentColor,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.shopping_bag_rounded,
-              color: logoColorSecondary,
+    return GetBuilder<ProductDetailController>(
+      // Ganti Obx dengan GetBuilder
+      builder: (controller) {
+        return Scaffold(
+          backgroundColor: backgroundColor5,
+          appBar: _buildAppBar(controller.product.value),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildImageSlider(),
+                _buildProductInfo(controller.product.value),
+              ],
             ),
-            onPressed: () {
-              Share.share('Check out this product: ${product.name}');
-            },
-          )
-        ],
-      ),
-      body: Obx(() {
-        final product = controller.product.value;
-
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildImageSlider(product.imageUrls ?? []),
-              _buildProductInfo(product),
-            ],
           ),
+          bottomNavigationBar: _buildBottomNavigationBar(),
         );
-      }),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.all(Dimenssions.height10),
-        decoration: BoxDecoration(
-          color: backgroundColor5,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              // Wishlist Button
-              Container(
-                width: Dimenssions.width55,
-                height: Dimenssions.width55,
-                margin: EdgeInsets.only(right: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: logoColorSecondary),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.chat,
-                    color: logoColorSecondary,
-                  ),
-                  onPressed: () {
-                    final merchant = controller.product.value.merchant;
-                    if (merchant != null) {
-                      Get.toNamed('/chat', arguments: {
-                        'merchantId': merchant.id,
-                        'merchantName': merchant.name,
-                      });
-                    } else {
-                      Get.snackbar(
-                        'Error',
-                        'Tidak dapat memulai chat dengan penjual',
-                        backgroundColor: Colors.red,
-                        colorText: Colors.white,
-                      );
-                    }
-                  },
-                ),
-              ),
-              // Buy Now Button
-              Expanded(
-                child: Container(
-                  height: Dimenssions.width55,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: logoColorSecondary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (controller.product.value.status != 'ACTIVE') {
-                        Get.snackbar(
-                          'Tidak Tersedia',
-                          'Produk ini sedang tidak tersedia',
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
-                        );
-                        return;
-                      }
-
-                      final product = controller.product.value;
-                      final quantity = controller.quantity.value;
-
-                      Get.toNamed('/checkout', arguments: {
-                        'product': product,
-                        'quantity': quantity,
-                        'type': 'direct_buy',
-                      });
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.shopping_cart_checkout,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Beli Sekarang',
-                          style: primaryTextStyle.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      },
     );
   }
 
-  Widget _buildImageSlider(List<String> imageUrls) {
-    final List<String> placeholderImages = [
-      'assets/image_shoes.png',
-      'assets/image_shoes2.png',
-      'assets/image_shoes3.png',
-    ];
+  // AppBar Widget
+  AppBar _buildAppBar(ProductModel product) {
+    return AppBar(
+      title: Text(product.name ?? 'Detail Produk'),
+      backgroundColor: transparentColor,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => Get.back(),
+      ),
+      actions: [
+        Stack(
+          alignment: Alignment.topRight,
+          children: [
+            IconButton(
+                icon: Icon(Icons.shopping_cart, color: logoColorSecondary),
+                onPressed: () {
+                  Get.toNamed(Routes.cart);
+                }),
+            GetBuilder<CartController>(
+              builder: (cartController) {
+                // Menghitung total item dari semua merchant
+                final totalItemCount = cartController.itemCount;
 
-    final List<String> displayImages =
-        imageUrls.isEmpty ? placeholderImages : imageUrls;
-
-    return Stack(
-      children: [
-        CarouselSlider.builder(
-          itemCount: displayImages.length,
-          options: CarouselOptions(
-            height: Dimenssions.popularFoodDetailImgSize,
-            viewportFraction: 0.8,
-            enlargeCenterPage: true,
-            enlargeStrategy: CenterPageEnlargeStrategy.height,
-            enlargeFactor: 0.3,
-            autoPlay: displayImages.length > 1,
-            autoPlayInterval: const Duration(seconds: 3),
-            onPageChanged: (index, _) {
-              controller.updateImageIndex(index);
-            },
-            padEnds: true,
-          ),
-          itemBuilder: (context, index, realIndex) {
-            return GestureDetector(
-              onTap: () {
-                Get.to(
-                  () => ImageViewerPage(
-                    imageUrls: displayImages,
-                    initialIndex: index,
-                  ),
-                  transition: Transition.zoom,
-                );
-              },
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 5.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: Colors.grey[200],
-                ),
-                child: Hero(
-                  tag: "Image_$index",
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: imageUrls.isEmpty
-                        ? Image.asset(
-                            displayImages[index],
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            displayImages[index],
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes !=
-                                          null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/image_shoes.png',
-                                fit: BoxFit.cover,
-                              );
-                            },
+                return totalItemCount > 0
+                    ? Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        Positioned(
-          bottom: 16,
-          left: 0,
-          right: 0,
-          child: Obx(() {
-            // Pastikan currentImageIndex tidak null
-            final currentIndex = controller.currentImageIndex.value;
-            return Center(
-              child: AnimatedSmoothIndicator(
-                activeIndex: currentIndex,
-                count: displayImages.length,
-                effect: WormEffect(
-                  dotWidth: 11,
-                  dotHeight: 11,
-                  spacing: 10,
-                  strokeWidth: 1,
-                  dotColor: Colors.grey.shade400,
-                  activeDotColor: logoColorSecondary,
-                  paintStyle: PaintingStyle.stroke,
-                  type: WormType.thinUnderground,
-                ),
-              ),
-            );
-          }),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            totalItemCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink();
+              },
+            ),
+          ],
         ),
       ],
     );
   }
 
+  Widget _buildReviewSection() {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildReviewHeader(),
+          const SizedBox(height: 16),
+          _buildReviewList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ulasan Produk',
+              style: TextStyle(
+                color: primaryTextColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Obx(() {
+              final averageRating = controller.product.value.averageRating;
+              return Row(
+                children: [
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < averageRating.floor()
+                            ? Icons.star
+                            : index < averageRating
+                                ? Icons.star_half
+                                : Icons.star_border,
+                        color: Colors.amber,
+                        size: 16,
+                      );
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    averageRating.toStringAsFixed(1),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: Dimenssions.font14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ],
+        ),
+        Obx(() {
+          final reviewCount = controller.product.value.reviews?.length ?? 0;
+          return Text(
+            '$reviewCount ${reviewCount == 1 ? 'Ulasan' : 'Ulasan'}',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: Dimenssions.font14,
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildReviewList() {
+    return Obx(() {
+      final reviews = controller.product.value.reviews;
+
+      if (reviews == null || reviews.isEmpty) {
+        return _buildEmptyReviewState();
+      }
+
+      return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: reviews.length,
+        separatorBuilder: (context, index) => Divider(
+          color: Colors.grey[200],
+          height: 24,
+          thickness: 1,
+        ),
+        itemBuilder: (context, index) => _buildReviewItem(reviews[index]),
+      );
+    });
+  }
+
+  Widget _buildEmptyReviewState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.rate_review_outlined,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Belum ada ulasan untuk produk ini.',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: Dimenssions.font14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Jadilah yang pertama memberikan ulasan!',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: Dimenssions.font12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewItem(ProductReviewModel review) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildReviewerAvatar(review),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildReviewContent(review),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewerAvatar(ProductReviewModel review) {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: primaryColor.withOpacity(0.1),
+      backgroundImage: review.user?.profilePhotoUrl != null
+          ? NetworkImage(review.user!.profilePhotoUrl!)
+          : null,
+      child: review.user?.profilePhotoUrl == null
+          ? Text(
+              (review.user?.name ?? 'U')[0].toUpperCase(),
+              style: TextStyle(
+                color: primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildReviewContent(ProductReviewModel review) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              review.user?.name ?? 'Pengguna',
+              style: TextStyle(
+                fontSize: Dimenssions.font16,
+                fontWeight: FontWeight.bold,
+                color: primaryTextColor,
+              ),
+            ),
+            Text(
+              _formatDate(review.createdAt),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: Dimenssions.font12,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            ...List.generate(5, (index) {
+              return Icon(
+                index < review.rating ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+                size: 16,
+              );
+            }),
+            const SizedBox(width: 8),
+            Text(
+              '${review.rating}/5',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: Dimenssions.font12,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          review.comment,
+          style: TextStyle(
+            color: Colors.grey[800],
+            fontSize: Dimenssions.font14,
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      if (difference.inHours == 0) {
+        return '${difference.inMinutes} menit yang lalu';
+      }
+      return '${difference.inHours} jam yang lalu';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} hari yang lalu';
+    } else {
+      return DateFormat('dd MMM yyyy', 'id_ID').format(date);
+    }
+  }
+
+  Widget _buildVariantSelector(ProductModel product) {
+    if (product.variants.isEmpty) return SizedBox();
+
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: Dimenssions.height15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pilih Varian',
+            style: primaryTextStyle.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: Dimenssions.height10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: product.variants.map((variant) {
+              return Obx(() => GestureDetector(
+                    onTap: () => controller.selectVariant(variant),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Dimenssions.width10,
+                        vertical: Dimenssions.height5,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            controller.selectedVariant.value?.id == variant.id
+                                ? logoColorSecondary
+                                : Colors.white,
+                        border: Border.all(
+                          color:
+                              controller.selectedVariant.value?.id == variant.id
+                                  ? logoColorSecondary
+                                  : Colors.grey,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            height: Dimenssions.height20,
+                            width: Dimenssions.width55,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  variant.name,
+                                  style: TextStyle(
+                                    fontSize: Dimenssions.font16,
+                                    color:
+                                        controller.selectedVariant.value?.id ==
+                                                variant.id
+                                            ? Colors.white
+                                            : Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  variant.value,
+                                  style: TextStyle(
+                                    fontSize: Dimenssions.font16,
+                                    color:
+                                        controller.selectedVariant.value?.id ==
+                                                variant.id
+                                            ? Colors.white
+                                            : Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (variant.priceAdjustment != null)
+                            Text(
+                              '+ Rp ${variant.priceAdjustment}',
+                              style: TextStyle(
+                                color: controller.selectedVariant.value?.id ==
+                                        variant.id
+                                    ? Colors.white
+                                    : logoColorSecondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ));
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Bottom Navigation Bar
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: Dimenssions.width20,
+        vertical: Dimenssions.height10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9), // Membuat transparan
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            _buildChatButton(),
+            SizedBox(width: Dimenssions.width10),
+            _buildBuyNowButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Chat Button
+  Widget _buildChatButton() {
+    return Container(
+      width: Dimenssions.width45,
+      height: Dimenssions.height45,
+      decoration: BoxDecoration(
+        border: Border.all(color: logoColorSecondary),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        icon: Icon(Icons.chat, color: logoColorSecondary, size: 20),
+        onPressed: () {
+          final merchant = controller.product.value.merchant;
+          if (merchant != null) {
+            Get.toNamed('/chat', arguments: {
+              'merchantId': merchant.id,
+              'merchantName': merchant.name,
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  // Buy Now Button
+  Widget _buildBuyNowButton() {
+    return Expanded(
+      child: SizedBox(
+        height: Dimenssions.height45,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: logoColorSecondary,
+            padding: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () {
+            if (controller.product.value.status != 'ACTIVE') {
+              Get.snackbar(
+                'Tidak Tersedia',
+                'Produk ini sedang tidak tersedia',
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+              );
+              return;
+            }
+
+            _buyNow();
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.shopping_cart_checkout, color: Colors.white, size: 18),
+              SizedBox(width: Dimenssions.width10),
+              Text(
+                'Beli Sekarang',
+                style: primaryTextStyle.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Image Indicator
+  // Image Slider
+  Widget _buildImageSlider() {
+    return GetBuilder<ProductDetailController>(
+      builder: (controller) {
+        final product = controller.product.value;
+        final List<String> imageUrls = product.imageUrls;
+
+        final List<String> placeholderImages = [
+          'assets/image_shoes.png',
+          'assets/image_shoes2.png',
+          'assets/image_shoes3.png',
+        ];
+
+        final List<String> displayImages =
+            imageUrls.isEmpty ? placeholderImages : imageUrls;
+
+        return Stack(
+          children: [
+            CarouselSlider.builder(
+              itemCount: displayImages.length,
+              options: CarouselOptions(
+                height: Dimenssions.height240,
+                viewportFraction: 0.7,
+                enlargeCenterPage: true,
+                autoPlayCurve: Curves.fastOutSlowIn,
+                enlargeStrategy: CenterPageEnlargeStrategy.scale,
+                enlargeFactor: 0.2,
+                autoPlay: displayImages.length > 1,
+                autoPlayInterval: const Duration(seconds: 3),
+                onPageChanged: (index, _) {
+                  controller.updateImageIndex(index);
+                  controller.update(); // Tambahkan ini untuk memperbarui UI
+                },
+                padEnds: true,
+              ),
+              itemBuilder: (context, index, realIndex) {
+                return _buildImageSliderItem(
+                  imageUrl: displayImages[index],
+                  index: index,
+                  uniqueId:
+                      '${product.id}_${DateTime.now().millisecondsSinceEpoch}',
+                );
+              },
+            ),
+            _buildImageIndicator(displayImages.length),
+          ],
+        );
+      },
+      id: 'image-slider', // Tambahkan ID unik untuk GetBuilder
+    );
+  }
+
+// Image Slider Item
+  Widget _buildImageSliderItem({
+    required String imageUrl,
+    required int index,
+    required String uniqueId,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        final product = controller.product.value;
+        final images = product.imageUrls?.isEmpty ?? true
+            ? [
+                'assets/image_shoes.png',
+                'assets/image_shoes2.png',
+                'assets/image_shoes3.png'
+              ]
+            : product.imageUrls!;
+
+        Get.to(
+          () => ImageViewerPage(
+            imageUrls: images,
+            initialIndex: index,
+            heroTagPrefix: uniqueId, // Tambahkan ini
+          ),
+          transition: Transition.zoom,
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 5.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          color: Colors.grey[200],
+        ),
+        child: Hero(
+          tag: 'product_image_${uniqueId}_$index', // Pastikan format tag sama
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: imageUrl.startsWith('assets/')
+                ? Image.asset(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                  )
+                : Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/image_shoes.png',
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// Image Indicator
+  Widget _buildImageIndicator(int imageCount) {
+    return Positioned(
+      bottom: 16,
+      left: 0,
+      right: 0,
+      child: Obx(() {
+        final currentIndex = controller.currentImageIndex.value;
+        return Center(
+          child: AnimatedSmoothIndicator(
+            activeIndex: currentIndex,
+            count: imageCount,
+            effect: WormEffect(
+              dotWidth: 11,
+              dotHeight: 11,
+              spacing: 10,
+              strokeWidth: 1,
+              dotColor: Colors.grey.shade400,
+              activeDotColor: logoColorSecondary,
+              paintStyle: PaintingStyle.stroke,
+              type: WormType.thinUnderground,
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  // Product Information
+  Widget _buildProductInfo(ProductModel product) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildProductHeader(product),
+          const SizedBox(height: 8),
+          _buildPriceAndCategory(product),
+          _buildDescription(product),
+          _buildVariantSelector(product),
+          SizedBox(height: Dimenssions.height25),
+          _buildMerchantInfo(product),
+          _buildReviewSection(),
+          SizedBox(height: Dimenssions.height20),
+          _buildQuantityAndCart(product),
+          // Tambahkan jarak
+        ],
+      ),
+    );
+  }
+
+  // Product Header
+  Widget _buildProductHeader(ProductModel product) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            product.name ?? 'Unknown Product',
+            style: primaryTextStyle.copyWith(
+              fontSize: Dimenssions.height30,
+            ),
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: product.status == 'ACTIVE'
+                ? Colors.green.withOpacity(0.1)
+                : Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            product.status ?? 'Habis',
+            style: TextStyle(
+              color: product.status == 'ACTIVE' ? Colors.green : Colors.red,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Price and Category
+  Widget _buildPriceAndCategory(ProductModel product) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Obx(() {
+          final total = controller.totalPrice;
+          return Text(
+            'Rp ${total.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 20,
+              color: logoColorSecondary,
+              fontWeight: FontWeight.bold,
+            ),
+          );
+        }),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: logoColorSecondary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            product.category?.name ?? 'No Category',
+            style: TextStyle(
+              color: logoColorSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Description
+  Widget _buildDescription(ProductModel product) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Deskripsi Produk',
+          style: TextStyle(
+            color: primaryTextColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          product.description ?? 'No description available',
+          style: TextStyle(
+            color: Colors.grey[600],
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Merchant Information
+  Widget _buildMerchantInfo(ProductModel product) {
+    return Container(
+      padding: EdgeInsets.all(Dimenssions.height22),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Informasi Toko',
+            style: TextStyle(
+              fontSize: 18,
+              color: primaryTextColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.store, color: logoColorSecondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  product.merchant?.name ?? 'Unknown Merchant',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.location_on, color: logoColorSecondary),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  product.merchant?.address ?? 'No address available',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.phone, color: logoColorSecondary),
+              SizedBox(width: 8),
+              Text(
+                product.merchant?.phoneNumber ?? 'No phone number',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Quantity and Add to Cart Button
+  Widget _buildQuantityAndCart(ProductModel product) {
+    return Row(
+      children: [
+        _buildQuantitySelector(),
+        SizedBox(width: Dimenssions.width10),
+        Expanded(
+          child: SizedBox(
+            height: Dimenssions.height45,
+            child: ElevatedButton(
+              onPressed: () {
+                _addToCart();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: logoColorSecondary,
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Tambah ke Keranjang',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Quantity Selector
   Widget _buildQuantitySelector() {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 16),
@@ -308,240 +1025,24 @@ class ProductDetailPage extends GetView<ProductDetailController> {
     );
   }
 
+  // Quantity Button
   Widget _buildQuantityButton({
     required IconData icon,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: TweenAnimationBuilder(
-        duration: const Duration(milliseconds: 200),
-        tween: Tween<double>(begin: 1, end: 1),
-        builder: (context, double value, child) {
-          return Transform.scale(
-            scale: value,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: logoColorSecondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: logoColorSecondary.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 1,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: logoColorSecondary,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildProductInfo(ProductModel product) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  product.name ?? 'Unknown Product',
-                  style: primaryTextStyle.copyWith(
-                    fontSize: Dimenssions.height30,
-                  ),
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: product.status == 'ACTIVE'
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  product.status ?? 'Habismi',
-                  style: TextStyle(
-                    color:
-                        product.status == 'ACTIVE' ? Colors.green : Colors.red,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-// Price and Category Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Rp ${product.price?.toString() ?? 'N/A'}',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: logoColorSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: logoColorSecondary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  product.category?.name ?? 'No Category',
-                  style: TextStyle(
-                    color: logoColorSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Description
-          Text(
-            'Deskripsi Produk',
-            style: TextStyle(
-              color: primaryTextColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            product.description ?? 'No description available',
-            style: TextStyle(
-              color: Colors.grey[600],
-              height: 1.5,
-            ),
-          ),
-          SizedBox(height: Dimenssions.height25),
-
-          // Merchant Information
-          Container(
-            padding: EdgeInsets.all(Dimenssions.height22),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Informasi Toko',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: primaryTextColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.store, color: logoColorSecondary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        product.merchant?.name ?? 'Unknown Merchant',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, color: logoColorSecondary),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        product.merchant?.address ?? 'No address available',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.phone, color: logoColorSecondary),
-                    SizedBox(width: 8),
-                    Text(
-                      product.merchant?.phoneNumber ?? 'No phone number',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Row(
-            children: [
-              _buildQuantitySelector(),
-              SizedBox(
-                width: Dimenssions.width20,
-              ),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Implement add to cart functionality
-                    final quantity = controller.quantity.value;
-                    Get.snackbar(
-                      'Added to Cart',
-                      '${product.name} (${quantity}x) added to cart',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: logoColorSecondary,
-                      colorText: Colors.white,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: logoColorSecondary,
-                    padding:
-                        EdgeInsets.symmetric(vertical: Dimenssions.height15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Tambah ke Keranjang',
-                    style: TextStyle(
-                      color: primaryTextColor,
-                      fontSize: Dimenssions.font18,
-                      fontWeight: FontWeight.bold,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Add to Cart Button
-        ],
+      child: Container(
+        padding: EdgeInsets.all(7),
+        decoration: BoxDecoration(
+          color: logoColorSecondary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 16,
+          color: logoColorSecondary,
+        ),
       ),
     );
   }

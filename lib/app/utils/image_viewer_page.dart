@@ -6,11 +6,12 @@ import 'package:get/get.dart';
 class ImageViewerPage extends StatefulWidget {
   final List<String> imageUrls;
   final int initialIndex;
-
+  final String heroTagPrefix;
   const ImageViewerPage({
     Key? key,
     required this.imageUrls,
     this.initialIndex = 0,
+    required this.heroTagPrefix,
   }) : super(key: key);
 
   @override
@@ -114,7 +115,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
                     minScale: PhotoViewComputedScale.contained,
                     maxScale: PhotoViewComputedScale.covered * 2,
                     heroAttributes: PhotoViewHeroAttributes(
-                      tag: "image_$index",
+                      tag:
+                          "product_image_${widget.heroTagPrefix}_$index", // Ubah ini
                     ),
                   );
                 },

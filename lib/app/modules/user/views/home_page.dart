@@ -183,7 +183,8 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: controller.products
             .map((product) => ProductTile(
-                  imageUrl: product.imageUrls.isNotEmpty
+                  imageUrl: product.galleries.isNotEmpty &&
+                          product.imageUrls[0].isNotEmpty
                       ? product.imageUrls[0]
                       : 'assets/image_shoes2.png',
                   name: product.name,
@@ -265,7 +266,8 @@ class _HomePageState extends State<HomePage> {
                     ? const Color(0xff69c5df)
                     : const Color(0xff9294cc),
                 image: DecorationImage(
-                  image: product.imageUrls.isNotEmpty
+                  image: product.galleries.isNotEmpty &&
+                          product.imageUrls[0].isNotEmpty
                       ? NetworkImage(product.imageUrls[0])
                       : const AssetImage('assets/image_shoes.png')
                           as ImageProvider,

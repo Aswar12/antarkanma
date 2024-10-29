@@ -8,6 +8,7 @@ import 'package:antarkanma/app/modules/courier/courier_binding.dart';
 import 'package:antarkanma/app/modules/merchant/views/merchant_main_page.dart';
 import 'package:antarkanma/app/modules/splash/views/splash_page.dart';
 import 'package:antarkanma/app/modules/user/user_binding.dart';
+import 'package:antarkanma/app/modules/user/views/cart_page.dart';
 import 'package:antarkanma/app/modules/user/views/chat_page.dart';
 import 'package:antarkanma/app/modules/user/views/order_page.dart';
 import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
@@ -25,7 +26,7 @@ abstract class Routes {
   static const home = '/home';
   static const profile = '/home/profile';
   static const chat = '/home/chat';
-  static const cart = '/home/cart';
+  static const cart = '/cart';
   static const order = '/home/order';
   static const orderHistory = '/home/order-history';
   static const productDetail = '/product-detail';
@@ -79,6 +80,10 @@ class AppPages {
         GetPage(
           name: '/order',
           page: () => const OrderPage(),
+        ),
+        GetPage(
+          name: Routes.cart,
+          page: () => const CartPage(),
         ),
       ],
     ),

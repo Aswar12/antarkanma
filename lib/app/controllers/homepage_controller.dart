@@ -20,7 +20,8 @@ class HomePageController extends GetxController {
     try {
       isLoading(true); // Mulai loading
       await productService.fetchProducts(); // Tunggu fetchProducts selesai
-      products.assignAll(productService.products); // Ambil data dari service
+      products.assignAll(productService.products);
+      print(products); // Ambil data dari service
     } catch (e) {
       print('Error loading products: $e');
       // Tambahkan penanganan error, seperti menampilkan snackbar
