@@ -1,4 +1,5 @@
 import 'package:antarkanma/app/controllers/cart_controller.dart';
+import 'package:antarkanma/app/controllers/user_main_controller.dart';
 import 'package:antarkanma/app/data/models/cart_item_model.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
@@ -99,7 +100,13 @@ class CartPage extends GetView<CartController> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => Get.offAllNamed('/home'),
+            onPressed: () {
+              // Jika berada dalam UserMainPage
+              Get.find<UserMainController>().currentIndex.value = 0;
+
+              // Jika berada di CartPage standalone
+              Get.offAllNamed('/main');
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: logoColorSecondary,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
@@ -107,7 +114,8 @@ class CartPage extends GetView<CartController> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('Mulai Belanja', style: TextStyle(fontSize: 16)),
+            child: Text('Mulai Belanja',
+                style: primaryTextStyle.copyWith(color: backgroundColor1)),
           ),
         ],
       ),
@@ -251,10 +259,9 @@ class CartPage extends GetView<CartController> {
                             ),
                     ),
                     SizedBox(width: Dimenssions.width15),
-                    // Informasi produk dan kontrol kuantitas
+                    // Informasi produk
                     Expanded(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
@@ -273,40 +280,44 @@ class CartPage extends GetView<CartController> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          SizedBox(height: Dimenssions.height10),
-                          // Kontrol kuantitas
-                          Container(
-                            height: Dimenssions.height35,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove, size: 18),
-                                  onPressed: () => controller.decrementQuantity(
-                                      merchantId, index),
-                                  color: logoColorSecondary,
-                                ),
-                                Text(
-                                  '${item.quantity}',
-                                  style: primaryTextStyle.copyWith(
-                                    fontSize: Dimenssions.font16,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add, size: 18),
-                                  onPressed: () => controller.incrementQuantity(
-                                      merchantId, index),
-                                  color: logoColorSecondary,
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Kontrol kuantitas
+            Positioned(
+              bottom: 10,
+              left: Dimenssions.height100 +
+                  Dimenssions.width40, // Sesuaikan posisi sesuai kebutuhan
+              child: Container(
+                height: Dimenssions.height35,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove, size: 18),
+                      onPressed: () =>
+                          controller.decrementQuantity(merchantId, index),
+                      color: logoColorSecondary,
+                    ),
+                    Text(
+                      '${item.quantity}',
+                      style: primaryTextStyle.copyWith(
+                        fontSize: Dimenssions.font16,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add, size: 18),
+                      onPressed: () =>
+                          controller.incrementQuantity(merchantId, index),
+                      color: logoColorSecondary,
                     ),
                   ],
                 ),

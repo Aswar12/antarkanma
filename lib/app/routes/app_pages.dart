@@ -11,6 +11,7 @@ import 'package:antarkanma/app/modules/splash/views/splash_page.dart';
 import 'package:antarkanma/app/modules/user/user_binding.dart';
 import 'package:antarkanma/app/modules/user/views/cart_page.dart';
 import 'package:antarkanma/app/modules/user/views/chat_page.dart';
+import 'package:antarkanma/app/modules/user/views/home_page.dart';
 import 'package:antarkanma/app/modules/user/views/order_page.dart';
 import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
 import 'package:antarkanma/app/modules/user/views/profile_page.dart';
@@ -25,6 +26,7 @@ abstract class Routes {
 
   // User routes
   static const home = '/home';
+  static const main = '/main';
   static const profile = '/home/profile';
   static const chat = '/home/chat';
   static const cart = '/cart';
@@ -75,7 +77,7 @@ class AppPages {
       }),
     ),
     GetPage(
-      name: Routes.home,
+      name: Routes.main,
       page: () => const UserMainPage(),
       binding: UserBinding(),
       children: [
@@ -90,6 +92,10 @@ class AppPages {
         GetPage(
           name: '/order',
           page: () => const OrderPage(),
+        ),
+        GetPage(
+          name: '/home',
+          page: () => const HomePage(),
         ),
       ],
     ),

@@ -1,5 +1,5 @@
 class Config {
-  static const String baseUrl = 'http://192.168.177.93:8000/api';
+  static const String baseUrl = 'http://192.168.31.93:8000/api';
   static const int receiveTimeout = 15000;
   static const int connectTimeout = 15000;
 

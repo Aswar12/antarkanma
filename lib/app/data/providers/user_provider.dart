@@ -1,8 +1,9 @@
+import 'package:antarkanma/config.dart';
 import 'package:dio/dio.dart';
 
 class UserProvider {
   final Dio _dio = Dio();
-  final String baseUrl = 'http://192.168.31.93:8000/api';
+  final String baseUrl = Config.baseUrl;
 
   UserProvider() {
     _setupBaseOptions();

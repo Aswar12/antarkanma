@@ -28,31 +28,22 @@ class ProductService extends GetxService {
     try {
       isLoading.value = true;
 
-      // Cek apakah data produk sudah ada di GetStorage
       final storage = GetStorage();
       final storedProducts = storage.read('products');
+      final lastRefresh = storage.read('last_refresh');
 
-      if (storedProducts != null && storedProducts is List) {
-        // Tambahkan pengecekan tipe
+      final shouldRefresh = lastRefresh == null ||
+          DateTime.now().difference(DateTime.parse(lastRefresh)).inHours > 1;
+
+      if (storedProducts != null && storedProducts is List && !shouldRefresh) {
         products.value = (storedProducts as List)
             .map((json) => ProductModel.fromJson(json))
             .toList();
       } else {
-        final token = _storageService.getToken();
-        final response = await _productProvider.getAllProducts(token: token);
-
-        if (response.statusCode == 200) {
-          final productList =
-              response.data['data']['data'] as List; // Pastikan ini adalah List
-          products.value =
-              productList.map((json) => ProductModel.fromJson(json)).toList();
-
-          // Simpan ke storage dalam format List
-          await storage.write('products', productList);
-        }
+        await refreshProducts();
       }
     } catch (e) {
-      print('Error in fetchProducts: $e'); // Tambahkan log untuk debugging
+      print('Error in fetchProducts: $e');
       showCustomSnackbar(
         title: 'Error',
         message: 'Gagal mengambil data produk: ${e.toString()}',
@@ -119,6 +110,36 @@ class ProductService extends GetxService {
         isError: true,
       );
       return false;
+    }
+  }
+
+  Future<void> refreshProducts() async {
+    try {
+      isLoading.value = true;
+      final token = _storageService.getToken();
+      final response = await _productProvider.getAllProducts(token: token);
+
+      if (response.statusCode == 200) {
+        final productList = response.data['data']['data'] as List;
+        products.value =
+            productList.map((json) => ProductModel.fromJson(json)).toList();
+
+        // Update local storage
+        final storage = GetStorage();
+        await storage.write('products', productList);
+
+        // Update last refresh time
+        await storage.write('last_refresh', DateTime.now().toIso8601String());
+      }
+    } catch (e) {
+      print('Error in refreshProducts: $e');
+      showCustomSnackbar(
+        title: 'Error',
+        message: 'Gagal memperbarui data produk: ${e.toString()}',
+        isError: true,
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 

@@ -24,14 +24,8 @@ class _SplashPageState extends State<SplashPage> {
 
     // Periksa status login
     final box = GetStorage();
-    bool isLoggedIn = box.read('isLoggedIn') ?? false;
 
     // Navigasi berdasarkan status login
-    if (isLoggedIn) {
-      Get.offAllNamed(Routes.home);
-    } else {
-      Get.offAllNamed(Routes.login); // Pastikan Anda memiliki Routes.login
-    }
   }
 
   @override

@@ -5,7 +5,9 @@ import 'package:antarkanma/app/data/models/product_review_model.dart';
 import 'package:antarkanma/app/routes/app_pages.dart';
 import 'package:antarkanma/app/utils/image_viewer_page.dart';
 import 'package:antarkanma/app/widgets/custom_snackbar.dart';
+import 'package:antarkanma/app/widgets/profile_image.dart';
 import 'package:antarkanma/theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -333,45 +335,27 @@ class ProductDetailPage extends GetView<ProductDetailController> {
   }
 
   Widget _buildReviewerAvatar(ProductReviewModel review) {
-    final String avatarUrl = review.user?.profilePhotoPath ?? '';
-    final String name = review.user?.name ?? 'U';
-
-    return ClipOval(
-      child: Container(
+    final user = review.user;
+    if (user == null) {
+      // Jika user null, tampilkan avatar default
+      return Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: primaryColor.withOpacity(0.1),
+          shape: BoxShape.circle,
+          color: Colors.grey[200],
         ),
-        child: avatarUrl.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: avatarUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                ),
-                errorWidget: (context, url, error) => Center(
-                  child: Text(
-                    name[0].toUpperCase(),
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              )
-            : Center(
-                child: Text(
-                  name[0].toUpperCase(),
-                  style: TextStyle(
-                    color: primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-      ),
+        child: Icon(
+          Icons.person,
+          color: Colors.grey[400],
+        ),
+      );
+    }
+
+    // Jika user tidak null, gunakan ProfileImage
+    return ProfileImage(
+      user: user,
+      size: 40, // Anda bisa menyesuaikan ukuran sesuai kebutuhan
     );
   }
 
@@ -399,7 +383,15 @@ class ProductDetailPage extends GetView<ProductDetailController> {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: Dimenssions.height5),
+        Text(
+          review.comment,
+          style: TextStyle(
+            color: Colors.grey[800],
+            fontSize: Dimenssions.font14,
+            height: 1.5,
+          ),
+        ),
         Row(
           children: [
             ...List.generate(5, (index) {
@@ -409,7 +401,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
                 size: 16,
               );
             }),
-            const SizedBox(width: 8),
+            SizedBox(width: Dimenssions.height5),
             Text(
               '${review.rating}/5',
               style: TextStyle(
@@ -418,15 +410,6 @@ class ProductDetailPage extends GetView<ProductDetailController> {
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          review.comment,
-          style: TextStyle(
-            color: Colors.grey[800],
-            fontSize: Dimenssions.font14,
-            height: 1.5,
-          ),
         ),
       ],
     );
@@ -741,9 +724,6 @@ class ProductDetailPage extends GetView<ProductDetailController> {
       imageUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
-        if (kDebugMode) {
-          print('Error loading asset image: $imageUrl, Error: $error');
-        }
         return _buildErrorPlaceholder();
       },
     );
@@ -765,9 +745,6 @@ class ProductDetailPage extends GetView<ProductDetailController> {
         );
       },
       errorBuilder: (context, error, stackTrace) {
-        if (kDebugMode) {
-          print('Error loading network image: $imageUrl, Error: $error');
-        }
         return _buildErrorPlaceholder();
       },
     );

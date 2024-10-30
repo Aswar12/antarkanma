@@ -3,8 +3,11 @@
 import 'package:antarkanma/app/controllers/homepage_controller.dart';
 import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
 import 'package:antarkanma/app/routes/app_pages.dart';
+import 'package:antarkanma/app/services/auth_service.dart';
 import 'package:antarkanma/app/widgets/product_tile.dart';
+import 'package:antarkanma/app/widgets/profile_image.dart';
 import 'package:antarkanma/theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -17,6 +20,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final AuthService _authService = Get.find<AuthService>();
   PageController pageController = PageController(viewportFraction: 0.85);
   double _currPageValue = 0.0;
   final double _scaleFactor = 0.8;
@@ -50,19 +54,25 @@ class _HomePageState extends State<HomePage> {
         return const Center(child: CircularProgressIndicator());
       }
 
-      return ListView(
-        children: [
-          header(),
-          popularProductsTitle(),
-          popularProducts(),
-          listProductsTitle(),
-          listProducts(),
-        ],
+      return RefreshIndicator(
+        onRefresh: () async {
+          await controller.refreshProducts();
+        },
+        child: ListView(
+          children: [
+            header(),
+            popularProductsTitle(),
+            popularProducts(),
+            listProductsTitle(),
+            listProducts(),
+          ],
+        ),
       );
     });
   }
 
   Widget header() {
+    final AuthService authService = Get.find<AuthService>();
     return Container(
       margin: EdgeInsets.only(
         top: Dimenssions.height25,
@@ -101,19 +111,35 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(width: 20.0),
           GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: Dimenssions.width55,
-              height: Dimenssions.width55,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  image: AssetImage('assets/profil.png'),
-                ),
-              ),
-            ),
-          ),
+            onTap: () {
+              // Tambahkan aksi ketika foto profil ditekan
+            },
+            child: Obx(() {
+              final user = authService.getUser();
+
+              // Pengecekan jika user null
+              if (user == null) {
+                return Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.grey,
+                  ),
+                );
+              }
+
+              // Jika user tidak null, gunakan ProfileImage
+              return ProfileImage(
+                user: user, // Sekarang user sudah pasti tidak null
+                size: 50,
+              );
+            }),
+          )
         ],
       ),
     );
@@ -249,8 +275,6 @@ class _HomePageState extends State<HomePage> {
 
     return GestureDetector(
       onTap: () {
-        print(
-            'Navigating to product detail: ${product.name ?? 'Unknown Product'}');
         Get.toNamed(Routes.productDetail, arguments: product);
       },
       child: Transform(
@@ -349,7 +373,8 @@ class _HomePageState extends State<HomePage> {
                               Icons.location_on, ' 0 km', Colors.green),
                           _buildInfoItem(Icons.access_time_rounded, ' 0 menit',
                               Colors.red),
-                          _buildRatingItem(10, 10),
+                          _buildRatingItem(
+                              product.averageRating, product.totalReviews),
                         ],
                       ),
                     ],
