@@ -6,6 +6,8 @@ import 'package:antarkanma/app/routes/app_pages.dart';
 import 'package:antarkanma/app/utils/image_viewer_page.dart';
 import 'package:antarkanma/app/widgets/custom_snackbar.dart';
 import 'package:antarkanma/theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -80,17 +82,8 @@ class ProductDetailPage extends GetView<ProductDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = Get.arguments;
-    if (arguments is! ProductModel) {
-      // Handle error, misalnya tampilkan pesan error atau kembali ke halaman sebelumnya
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.snackbar('Error', 'Invalid product data');
-        Get.back();
-      });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    final product = Get.arguments as ProductModel;
 
-    final product = arguments;
     controller.setProduct(product);
 
     return GetBuilder<ProductDetailController>(
@@ -632,20 +625,18 @@ class ProductDetailPage extends GetView<ProductDetailController> {
 
   // Image Indicator
   // Image Slider
+  static const List<String> PLACEHOLDER_IMAGES = [
+    'assets/image_shoes.png',
+    'assets/image_shoes2.png',
+    'assets/image_shoes3.png',
+  ];
+
   Widget _buildImageSlider() {
     return GetBuilder<ProductDetailController>(
       builder: (controller) {
         final product = controller.product.value;
-        final List<String> imageUrls = product.imageUrls;
-
-        final List<String> placeholderImages = [
-          'assets/image_shoes.png',
-          'assets/image_shoes2.png',
-          'assets/image_shoes3.png',
-        ];
-
         final List<String> displayImages =
-            imageUrls.isEmpty ? placeholderImages : imageUrls;
+            product.imageUrls.isEmpty ? PLACEHOLDER_IMAGES : product.imageUrls;
 
         return Stack(
           children: [
@@ -662,7 +653,6 @@ class ProductDetailPage extends GetView<ProductDetailController> {
                 autoPlayInterval: const Duration(seconds: 3),
                 onPageChanged: (index, _) {
                   controller.updateImageIndex(index);
-                  controller.update(); // Tambahkan ini untuk memperbarui UI
                 },
                 padEnds: true,
               ),
@@ -670,8 +660,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
                 return _buildImageSliderItem(
                   imageUrl: displayImages[index],
                   index: index,
-                  uniqueId:
-                      '${product.id}_${DateTime.now().millisecondsSinceEpoch}',
+                  displayImages: displayImages,
                 );
               },
             ),
@@ -679,73 +668,97 @@ class ProductDetailPage extends GetView<ProductDetailController> {
           ],
         );
       },
-      id: 'image-slider', // Tambahkan ID unik untuk GetBuilder
+      id: 'image-slider',
     );
   }
 
-// Image Slider Item
   Widget _buildImageSliderItem({
     required String imageUrl,
     required int index,
-    required String uniqueId,
+    required List<String> displayImages,
   }) {
+    final String uniqueId =
+        '${controller.product.value.id}_${DateTime.now().millisecondsSinceEpoch}';
+
     return GestureDetector(
       onTap: () {
-        final product = controller.product.value;
-        final images = product.imageUrls?.isEmpty ?? true
-            ? [
-                'assets/image_shoes.png',
-                'assets/image_shoes2.png',
-                'assets/image_shoes3.png'
-              ]
-            : product.imageUrls!;
-
         Get.to(
           () => ImageViewerPage(
-            imageUrls: images,
+            imageUrls: displayImages,
             initialIndex: index,
-            heroTagPrefix: uniqueId, // Tambahkan ini
+            heroTagPrefix: uniqueId,
           ),
           transition: Transition.zoom,
         );
       },
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 5.0),
+        margin: const EdgeInsets.symmetric(horizontal: 5.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
           color: Colors.grey[200],
         ),
         child: Hero(
-          tag: 'product_image_${uniqueId}_$index', // Pastikan format tag sama
+          tag: 'product_image_${uniqueId}_$index',
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15),
-            child: imageUrl.startsWith('assets/')
-                ? Image.asset(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                  )
-                : Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        'assets/image_shoes.png',
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  ),
+            child: _buildImage(imageUrl),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImage(String imageUrl) {
+    return imageUrl.startsWith('assets/')
+        ? _buildAssetImage(imageUrl)
+        : _buildNetworkImage(imageUrl);
+  }
+
+  Widget _buildAssetImage(String imageUrl) {
+    return Image.asset(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        if (kDebugMode) {
+          print('Error loading asset image: $imageUrl, Error: $error');
+        }
+        return _buildErrorPlaceholder();
+      },
+    );
+  }
+
+  Widget _buildNetworkImage(String imageUrl) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Center(
+          child: CircularProgressIndicator(
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                : null,
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        if (kDebugMode) {
+          print('Error loading network image: $imageUrl, Error: $error');
+        }
+        return _buildErrorPlaceholder();
+      },
+    );
+  }
+
+  Widget _buildErrorPlaceholder() {
+    return Container(
+      color: Colors.grey[300],
+      child: const Center(
+        child: Icon(
+          Icons.error_outline,
+          color: Colors.red,
+          size: 40,
         ),
       ),
     );
