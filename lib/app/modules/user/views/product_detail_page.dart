@@ -80,7 +80,17 @@ class ProductDetailPage extends GetView<ProductDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    final product = Get.arguments as ProductModel;
+    final arguments = Get.arguments;
+    if (arguments is! ProductModel) {
+      // Handle error, misalnya tampilkan pesan error atau kembali ke halaman sebelumnya
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.snackbar('Error', 'Invalid product data');
+        Get.back();
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final product = arguments;
     controller.setProduct(product);
 
     return GetBuilder<ProductDetailController>(
@@ -113,48 +123,56 @@ class ProductDetailPage extends GetView<ProductDetailController> {
         onPressed: () => Get.back(),
       ),
       actions: [
-        Stack(
-          alignment: Alignment.topRight,
-          children: [
-            IconButton(
+        Obx(() {
+          final cartController = Get.find<CartController>();
+          final itemCount = cartController.itemCount;
+
+          return Stack(
+            alignment: Alignment.topRight,
+            children: [
+              IconButton(
                 icon: Icon(Icons.shopping_cart, color: logoColorSecondary),
                 onPressed: () {
-                  Get.toNamed(Routes.cart);
-                }),
-            GetBuilder<CartController>(
-              builder: (cartController) {
-                // Menghitung total item dari semua merchant
-                final totalItemCount = cartController.itemCount;
-
-                return totalItemCount > 0
-                    ? Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            totalItemCount.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink();
-              },
-            ),
-          ],
-        ),
+                  try {
+                    Get.toNamed('/cart');
+                  } catch (e) {
+                    print('Error navigating to cart: $e');
+                    showCustomSnackbar(
+                      title: 'Error',
+                      message: 'Tidak dapat membuka keranjang',
+                      backgroundColor: Colors.red,
+                      snackPosition: SnackPosition.BOTTOM,
+                    );
+                  }
+                },
+              ),
+              if (itemCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      itemCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        }),
       ],
     );
   }

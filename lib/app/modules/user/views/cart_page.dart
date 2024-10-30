@@ -2,6 +2,7 @@ import 'package:antarkanma/app/controllers/cart_controller.dart';
 import 'package:antarkanma/app/data/models/cart_item_model.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -11,34 +12,37 @@ class CartPage extends GetView<CartController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor3,
       appBar: AppBar(
-        title: const Text('Keranjang Belanja'),
+        toolbarHeight: Dimenssions.height45,
+        title: Text(
+          'Keranjang',
+          style: primaryTextStyle.copyWith(
+            // Menggunakan style dari theme
+            fontSize: Dimenssions.font20,
+            fontWeight: regular,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white, // Mengubah warna background
+        foregroundColor: primaryTextColor, // Mengubah warna teks dan icon
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () {
-              Get.dialog(
-                AlertDialog(
-                  title: const Text('Hapus Semua?'),
-                  content: const Text('Yakin ingin mengosongkan keranjang?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Get.back(),
-                      child: const Text('Batal'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        controller.clearCart();
-                        Get.back();
-                      },
-                      child: const Text('Hapus'),
-                    ),
-                  ],
-                ),
-              );
-            },
+            icon: Icon(
+              Icons.delete_outline,
+              size: Dimenssions.iconSize24,
+            ),
+            onPressed: () => _showClearCartDialog(),
           ),
         ],
+        elevation: 0.5,
+        shape: Border(
+          // Optional: menambahkan border bottom
+          bottom: BorderSide(
+            color: Colors.grey.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
       ),
       body: GetBuilder<CartController>(
         builder: (controller) {
@@ -52,28 +56,58 @@ class CartPage extends GetView<CartController> {
     );
   }
 
+  void _showClearCartDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Hapus Semua?'),
+        content: const Text('Yakin ingin mengosongkan keranjang?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              controller.clearCart();
+              Get.back();
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyCart() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.shopping_cart_outlined,
-            size: 80,
-            color: Colors.grey,
+            size: 100,
+            color: Colors.grey[400],
           ),
-          const SizedBox(height: 16),
-          const Text(
+          const SizedBox(height: 20),
+          Text(
             'Keranjang Belanja Kosong',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height: 8),
-          TextButton(
+          const SizedBox(height: 16),
+          ElevatedButton(
             onPressed: () => Get.offAllNamed('/home'),
-            child: const Text('Mulai Belanja'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: logoColorSecondary,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Mulai Belanja', style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -82,34 +116,42 @@ class CartPage extends GetView<CartController> {
 
   Widget _buildCartList() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(Dimenssions.height15),
       itemCount: controller.merchantItems.length,
       itemBuilder: (context, index) {
         final merchantId = controller.merchantItems.keys.elementAt(index);
-        final merchantItems = controller.merchantItems[merchantId]!;
-        return _buildMerchantSection(merchantId as String, merchantItems);
+        final merchantItems = controller.merchantItems[merchantId];
+        if (merchantItems != null) {
+          return _buildMerchantSection(merchantId, merchantItems);
+        }
+        return const SizedBox.shrink();
       },
     );
   }
 
-  Widget _buildMerchantSection(String merchantId, List<CartItemModel> items) {
+  Widget _buildMerchantSection(int merchantId, List<CartItemModel> items) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: Dimenssions.height15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.symmetric(
+                horizontal: Dimenssions.width20,
+                vertical: Dimenssions.height10),
             child: Text(
               items.first.merchant.name,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
+          const Divider(height: 1),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: items.length,
-            separatorBuilder: (context, index) => const Divider(),
+            separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) =>
                 _buildCartItem(merchantId, items[index], index),
           ),
@@ -118,7 +160,7 @@ class CartPage extends GetView<CartController> {
     );
   }
 
-  Widget _buildCartItem(String merchantId, CartItemModel item, int index) {
+  Widget _buildCartItem(int merchantId, CartItemModel item, int index) {
     return Dismissible(
       key: Key('$merchantId-${item.product.id}'),
       direction: DismissDirection.endToStart,
@@ -129,6 +171,7 @@ class CartPage extends GetView<CartController> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       confirmDismiss: (direction) async {
+        HapticFeedback.mediumImpact();
         return await Get.dialog<bool>(
           AlertDialog(
             title: const Text('Hapus Item?'),
@@ -141,7 +184,7 @@ class CartPage extends GetView<CartController> {
               ),
               TextButton(
                 onPressed: () {
-                  controller.removeFromCart(merchantId as int, index);
+                  controller.removeFromCart(merchantId, index);
                   Get.back(result: true);
                 },
                 child: const Text('Hapus'),
@@ -150,40 +193,124 @@ class CartPage extends GetView<CartController> {
           ),
         );
       },
-      child: ListTile(
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            item.product.imageUrls.first,
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(child: CircularProgressIndicator());
-            },
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.error),
-          ),
-        ),
-        title: Text(item.product.name ?? ''),
-        subtitle: Text(
-          NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0)
-              .format(item.totalPrice),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.remove),
-              onPressed: () =>
-                  controller.decrementQuantity(merchantId as int, index),
+      onDismissed: (direction) {
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          SnackBar(
+            content: Text('${item.product.name} dihapus dari keranjang'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                controller.undoRemove(merchantId, index, item);
+              },
             ),
-            Text('${item.quantity}'),
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () =>
-                  controller.incrementQuantity(merchantId as int, index),
+          ),
+        );
+      },
+      child: Semantics(
+        label: 'Geser ke kiri untuk menghapus ${item.product.name}',
+        child: Stack(
+          children: [
+            Tooltip(
+              message: 'Geser ke kiri untuk menghapus ${item.product.name}',
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Dimenssions.height20,
+                  vertical: Dimenssions.height10,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Gambar produk
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: item.product.imageUrls.isNotEmpty
+                          ? Image.network(
+                              item.product.imageUrls.first,
+                              width: Dimenssions.height100,
+                              height: Dimenssions.height100,
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              },
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Image.asset(
+                                'assets/image_shoes.png',
+                                width: Dimenssions.height100,
+                                height: Dimenssions.height100,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/image_shoes.png',
+                              width: Dimenssions.height100,
+                              height: Dimenssions.height100,
+                              fit: BoxFit.cover,
+                            ),
+                    ),
+                    SizedBox(width: Dimenssions.width15),
+                    // Informasi produk dan kontrol kuantitas
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.product.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: Dimenssions.height5),
+                          Text(
+                            NumberFormat.currency(
+                              locale: 'id',
+                              symbol: 'Rp ',
+                              decimalDigits: 0,
+                            ).format(item.totalPrice),
+                            style: TextStyle(
+                              color: logoColorSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: Dimenssions.height10),
+                          // Kontrol kuantitas
+                          Container(
+                            height: Dimenssions.height35,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove, size: 18),
+                                  onPressed: () => controller.decrementQuantity(
+                                      merchantId, index),
+                                  color: logoColorSecondary,
+                                ),
+                                Text(
+                                  '${item.quantity}',
+                                  style: primaryTextStyle.copyWith(
+                                    fontSize: Dimenssions.font16,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add, size: 18),
+                                  onPressed: () => controller.incrementQuantity(
+                                      merchantId, index),
+                                  color: logoColorSecondary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -194,12 +321,20 @@ class CartPage extends GetView<CartController> {
   Widget _buildCheckoutBar() {
     return SafeArea(
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(Dimenssions.radius15),
+            topRight: Radius.circular(Dimenssions.radius15),
+          ),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-                color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -3),
+            ),
           ],
         ),
         child: Row(
@@ -209,17 +344,26 @@ class CartPage extends GetView<CartController> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Total Pembayaran',
-                      style: TextStyle(color: Colors.grey[600])),
+                  const Text(
+                    'Total Belanjaanta',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   GetBuilder<CartController>(
                     builder: (controller) => Text(
                       NumberFormat.currency(
-                              locale: 'id', symbol: 'Rp ', decimalDigits: 0)
-                          .format(controller.totalPrice),
+                        locale: 'id',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(controller.totalPrice),
                       style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: logoColorSecondary),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: logoColorSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -240,12 +384,19 @@ class CartPage extends GetView<CartController> {
                       ? logoColorSecondary
                       : Colors.grey,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('Checkout'),
+                child: const Text(
+                  'Checkout',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],

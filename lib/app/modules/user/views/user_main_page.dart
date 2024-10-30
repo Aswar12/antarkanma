@@ -1,6 +1,7 @@
 // lib/app/modules/user/views/user_main_page.dart
 
 import 'package:antarkanma/app/controllers/user_main_controller.dart';
+import 'package:antarkanma/app/modules/user/views/cart_page.dart';
 import 'package:antarkanma/app/modules/user/views/chat_page.dart';
 import 'package:antarkanma/app/modules/user/views/home_page.dart';
 import 'package:antarkanma/app/modules/user/views/order_page.dart';
@@ -19,7 +20,7 @@ class UserMainPage extends GetView<UserMainController> {
 
     final List<Widget> pages = [
       const HomePage(),
-      const ChatPage(),
+      const CartPage(),
       const OrderPage(),
       const ProfilePage(),
     ];

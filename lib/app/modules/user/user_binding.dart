@@ -19,9 +19,6 @@ class UserBinding extends Bindings {
     // Inject HomePageController with UserController dependency
     Get.lazyPut<HomePageController>(() => HomePageController(Get.find()));
     Get.lazyPut<ProductDetailController>(() => ProductDetailController());
-    Get.lazyPut<ProductDetailController>(
-      () => ProductDetailController(),
-    );
     // Feature Controllers (uncomment if needed)
     // Get.lazyPut<ProfileController>(() => ProfileController());
     // Get.lazyPut<ChatController>(() => ChatController());
