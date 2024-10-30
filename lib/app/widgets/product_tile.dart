@@ -1,5 +1,3 @@
-// lib/app/widgets/product_tile.dart
-
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -8,8 +6,6 @@ class ProductTile extends StatelessWidget {
   final String name;
   final double price;
   final String merchantName;
-  final double distance;
-  final int duration;
   final double rating;
   final int reviews;
   final Function()? onTap;
@@ -20,19 +16,10 @@ class ProductTile extends StatelessWidget {
     required this.name,
     required this.price,
     required this.merchantName,
-    required this.distance,
-    required this.duration,
     required this.rating,
     required this.reviews,
     this.onTap,
   }) : super(key: key);
-  ImageProvider _getImageProvider(String imageUrl) {
-    if (imageUrl.startsWith('http')) {
-      return NetworkImage(imageUrl) as ImageProvider;
-    } else {
-      return AssetImage(imageUrl) as ImageProvider;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,23 +81,16 @@ class ProductTile extends StatelessWidget {
                 padding: EdgeInsets.all(Dimenssions.height10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       name,
                       style: primaryTextStyle.copyWith(
-                        fontSize: Dimenssions.font16,
+                        fontSize: Dimenssions.font18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: Dimenssions.height5),
-                    Text(
-                      'Rp ${price.toStringAsFixed(0)}',
-                      style: priceTextStyle.copyWith(
-                        fontSize: Dimenssions.font14,
-                        fontWeight: medium,
-                      ),
                     ),
                     SizedBox(height: Dimenssions.height5),
                     Row(
@@ -121,10 +101,14 @@ class ProductTile extends StatelessWidget {
                           color: Colors.blue,
                         ),
                         SizedBox(width: Dimenssions.width5),
-                        Text(
-                          merchantName,
-                          style: subtitleTextStyle.copyWith(
-                            fontSize: Dimenssions.font12,
+                        Expanded(
+                          child: Text(
+                            merchantName,
+                            style: subtitleTextStyle.copyWith(
+                              fontSize: Dimenssions.font12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -133,37 +117,12 @@ class ProductTile extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: Dimenssions.iconSize16,
-                              color: Colors.green,
-                            ),
-                            SizedBox(width: Dimenssions.width5),
-                            Text(
-                              '$distance km',
-                              style: subtitleTextStyle.copyWith(
-                                fontSize: Dimenssions.font12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              size: Dimenssions.iconSize16,
-                              color: Colors.red,
-                            ),
-                            SizedBox(width: Dimenssions.width5),
-                            Text(
-                              '$duration min',
-                              style: subtitleTextStyle.copyWith(
-                                fontSize: Dimenssions.font12,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          'Rp ${price.toStringAsFixed(0)}',
+                          style: priceTextStyle.copyWith(
+                            fontSize: Dimenssions.font14,
+                            fontWeight: medium,
+                          ),
                         ),
                         Row(
                           children: [

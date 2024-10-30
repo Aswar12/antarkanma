@@ -60,7 +60,7 @@ class AuthController extends GetxController {
         String role = _authService.userRole;
         switch (role) {
           case 'USER':
-            Get.offAllNamed(Routes.home);
+            Get.offAllNamed(Routes.main);
             break;
           case 'MERCHANT':
             Get.offAllNamed(Routes.merchantHome);

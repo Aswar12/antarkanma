@@ -1,13 +1,12 @@
 // ignore_for_file: use_full_hex_values_for_flutter_colors
 
 import 'package:antarkanma/app/controllers/homepage_controller.dart';
-import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
 import 'package:antarkanma/app/routes/app_pages.dart';
 import 'package:antarkanma/app/services/auth_service.dart';
 import 'package:antarkanma/app/widgets/product_tile.dart';
 import 'package:antarkanma/app/widgets/profile_image.dart';
 import 'package:antarkanma/theme.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -21,30 +20,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final AuthService _authService = Get.find<AuthService>();
-  PageController pageController = PageController(viewportFraction: 0.85);
-  double _currPageValue = 0.0;
-  final double _scaleFactor = 0.8;
-  final double _height = Dimenssions.pageViewContainer;
-
+  final CarouselController carouselController = CarouselController();
   late HomePageController controller;
 
   @override
   void initState() {
     super.initState();
     controller = Get.find<HomePageController>();
-    pageController.addListener(_onPageChanged);
-  }
-
-  @override
-  void dispose() {
-    pageController.dispose();
-    super.dispose();
-  }
-
-  void _onPageChanged() {
-    setState(() {
-      _currPageValue = pageController.page ?? 0.0;
-    });
   }
 
   @override
@@ -55,9 +37,7 @@ class _HomePageState extends State<HomePage> {
       }
 
       return RefreshIndicator(
-        onRefresh: () async {
-          await controller.refreshProducts();
-        },
+        onRefresh: controller.refreshProducts,
         child: ListView(
           children: [
             header(),
@@ -72,7 +52,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget header() {
-    final AuthService authService = Get.find<AuthService>();
     return Container(
       margin: EdgeInsets.only(
         top: Dimenssions.height25,
@@ -115,9 +94,7 @@ class _HomePageState extends State<HomePage> {
               // Tambahkan aksi ketika foto profil ditekan
             },
             child: Obx(() {
-              final user = authService.getUser();
-
-              // Pengecekan jika user null
+              final user = _authService.getUser();
               if (user == null) {
                 return Container(
                   width: 50,
@@ -132,10 +109,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               }
-
-              // Jika user tidak null, gunakan ProfileImage
               return ProfileImage(
-                user: user, // Sekarang user sudah pasti tidak null
+                user: user,
                 size: 50,
               );
             }),
@@ -148,30 +123,170 @@ class _HomePageState extends State<HomePage> {
   Widget popularProducts() {
     return Column(
       children: [
-        SizedBox(
-          height: Dimenssions.pageView,
-          child: PageView.builder(
-            itemCount:
-                controller.products.length > 4 ? 4 : controller.products.length,
-            controller: pageController,
-            itemBuilder: (context, position) {
-              return _buildPageItem(position);
+        CarouselSlider.builder(
+          itemCount:
+              controller.products.length > 4 ? 4 : controller.products.length,
+          options: CarouselOptions(
+            height: Dimenssions.pageView,
+            viewportFraction: 0.8,
+            enlargeCenterPage: true,
+            autoPlayCurve: Curves.fastOutSlowIn,
+            enlargeStrategy: CenterPageEnlargeStrategy.scale,
+            enlargeFactor: 0.2,
+            autoPlay: controller.products.length > 1,
+            autoPlayInterval: const Duration(seconds: 3),
+            onPageChanged: (index, reason) {
+              controller.updateCurrentIndex(index);
             },
+            padEnds: true,
           ),
+          itemBuilder: (context, index, realIndex) {
+            return _buildCarouselItem(index);
+          },
         ),
         SizedBox(height: Dimenssions.height5),
-        SmoothPageIndicator(
-          controller: pageController,
-          count:
-              controller.products.length > 4 ? 4 : controller.products.length,
-          effect: const WormEffect(
-            activeDotColor: Color(0xfffffff6600),
-            dotHeight: 11,
-            dotWidth: 11,
-            type: WormType.thinUnderground,
-          ),
-        ),
+        Obx(() => AnimatedSmoothIndicator(
+              activeIndex: controller.currentIndex.value,
+              count: controller.products.length > 4
+                  ? 4
+                  : controller.products.length,
+              effect: const WormEffect(
+                activeDotColor: Color(0xfffffff6600),
+                dotHeight: 11,
+                dotWidth: 11,
+                type: WormType.thinUnderground,
+              ),
+            )),
       ],
+    );
+  }
+
+  Widget _buildCarouselItem(int index) {
+    if (index < 0 || index >= controller.products.length) {
+      return Container();
+    }
+    var product = controller.products[index];
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed(Routes.productDetail, arguments: product);
+      },
+      child: Stack(
+        children: [
+          Container(
+            height: Dimenssions.pageViewContainer,
+            margin: EdgeInsets.symmetric(horizontal: Dimenssions.width10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(Dimenssions.radius30),
+              color: index.isEven
+                  ? const Color(0xff69c5df)
+                  : const Color(0xff9294cc),
+              image: DecorationImage(
+                image: product.galleries.isNotEmpty &&
+                        product.imageUrls[0].isNotEmpty
+                    ? NetworkImage(product.imageUrls[0])
+                    : const AssetImage('assets/image_shoes.png')
+                        as ImageProvider,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: Dimenssions.pageTextContainer,
+              margin: EdgeInsets.symmetric(
+                horizontal: Dimenssions.width20,
+                vertical: Dimenssions.height5,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(Dimenssions.radius20),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(Dimenssions.height20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              product.name,
+                              style: TextStyle(
+                                color: primaryTextColor,
+                                fontSize: Dimenssions.font16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          SizedBox(width: Dimenssions.width10),
+                          _buildRatingItem(
+                              product.averageRating, product.totalReviews),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Rp ${product.price}',
+                            style: TextStyle(
+                              fontSize: Dimenssions.font14,
+                              color: logoColorSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Icon(Icons.store,
+                                    color: Colors.blue,
+                                    size: Dimenssions.iconSize16),
+                                SizedBox(width: Dimenssions.width5),
+                                Flexible(
+                                  child: Text(
+                                    product.merchant?.name ??
+                                        'Unknown Merchant',
+                                    style: TextStyle(
+                                      color: primaryTextColor,
+                                      fontSize: Dimenssions.font12,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.end,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -207,183 +322,23 @@ class _HomePageState extends State<HomePage> {
     return Container(
       margin: EdgeInsets.only(top: Dimenssions.height10),
       child: Column(
-        children: controller.products
-            .map((product) => ProductTile(
-                  imageUrl: product.galleries.isNotEmpty &&
-                          product.imageUrls[0].isNotEmpty
-                      ? product.imageUrls[0]
-                      : 'assets/image_shoes2.png',
-                  name: product.name,
-                  price: product.price,
-                  merchantName: product.merchant?.name ?? 'Unknown Merchant',
-                  distance:
-                      0, // Anda perlu menambahkan properti ini di MerchantModel
-                  duration:
-                      0, // Anda perlu menambahkan properti ini di MerchantModel
-                  rating:
-                      0, // Anda perlu menambahkan properti ini di MerchantModel
-                  reviews:
-                      0, // Anda perlu menambahkan properti ini di MerchantModel
-                  onTap: () {
-                    if (product != null) {
-                      print(
-                          'Navigating to product detail: ${product.name ?? 'Unknown Product'}');
-                      Get.toNamed(Routes.productDetail, arguments: product);
-                    } else {
-                      print('Product is null, cannot navigate');
-                      Get.snackbar('Error', 'Product details not available');
-                    }
-                  },
-                ))
-            .toList(),
-      ),
-    );
-  }
-
-  Widget _buildPageItem(int index) {
-    if (index < 0 || index >= controller.products.length) {
-      print('Invalid index: $index');
-      return Container(); // Return an empty container if index is out of bounds
-    }
-    var product = controller.products[index];
-    if (product == null) {
-      print('Product at index $index is null');
-      return Container(); // Return an empty container if product is null
-    }
-    Matrix4 matrix = Matrix4.identity();
-    if (index == _currPageValue.floor()) {
-      var currScale = 1 - (_currPageValue - index) * (1 - _scaleFactor);
-      var currTrans = _height * (1 - currScale) / 2;
-      matrix = Matrix4.diagonal3Values(1, currScale, 1)
-        ..setTranslationRaw(0, currTrans, 0);
-    } else if (index == _currPageValue.floor() + 1) {
-      var currScale =
-          _scaleFactor + (_currPageValue - index + 1) * (1 - _scaleFactor);
-      var currTrans = _height * (1 - currScale) / 2;
-      matrix = Matrix4.diagonal3Values(1, currScale, 1)
-        ..setTranslationRaw(0, currTrans, 0);
-    } else if (index == _currPageValue.floor() - 1) {
-      var currScale = 1 - (_currPageValue - index) * (1 - _scaleFactor);
-      var currTrans = _height * (1 - currScale) / 2;
-      matrix = Matrix4.diagonal3Values(1, currScale, 1)
-        ..setTranslationRaw(0, currTrans, 0);
-    } else {
-      var currScale = 0.8;
-      matrix = Matrix4.diagonal3Values(1, currScale, 1)
-        ..setTranslationRaw(0, _height * (1 - _scaleFactor) / 2, 1);
-    }
-
-    return GestureDetector(
-      onTap: () {
-        Get.toNamed(Routes.productDetail, arguments: product);
-      },
-      child: Transform(
-        transform: matrix,
-        child: Stack(
-          children: [
-            Container(
-              height: Dimenssions.pageViewContainer,
-              margin: EdgeInsets.symmetric(horizontal: Dimenssions.width10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(Dimenssions.radius30),
-                color: index.isEven
-                    ? const Color(0xff69c5df)
-                    : const Color(0xff9294cc),
-                image: DecorationImage(
-                  image: product.galleries.isNotEmpty &&
-                          product.imageUrls[0].isNotEmpty
-                      ? NetworkImage(product.imageUrls[0])
-                      : const AssetImage('assets/image_shoes.png')
-                          as ImageProvider,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: Dimenssions.pageTextContainer,
-                margin: EdgeInsets.symmetric(
-                  horizontal: Dimenssions.width30,
-                  vertical: Dimenssions.height10,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(Dimenssions.radius20),
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(Dimenssions.height15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        product.name,
-                        style: TextStyle(
-                          color: primaryTextColor,
-                          fontSize: Dimenssions.font16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: Dimenssions.height10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Rp ${product.price}',
-                            style: TextStyle(
-                              fontSize: Dimenssions.font14,
-                              color: logoColorSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.store,
-                                  color: Colors.blue,
-                                  size: Dimenssions.iconSize16),
-                              SizedBox(width: Dimenssions.width5),
-                              Text(
-                                product.merchant?.name ?? 'Unknown Merchant',
-                                style: TextStyle(
-                                    color: primaryTextColor,
-                                    fontSize: Dimenssions.font12),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Divider(color: logoColorSecondary),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildInfoItem(
-                              Icons.location_on, ' 0 km', Colors.green),
-                          _buildInfoItem(Icons.access_time_rounded, ' 0 menit',
-                              Colors.red),
-                          _buildRatingItem(
-                              product.averageRating, product.totalReviews),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        children: controller.products.map((product) {
+          return ProductTile(
+            imageUrl:
+                product.galleries.isNotEmpty && product.imageUrls[0].isNotEmpty
+                    ? product.imageUrls[0]
+                    : 'assets/image_shoes2.png',
+            name: product.name,
+            price: product.price,
+            merchantName: product.merchant?.name ?? 'Unknown Merchant',
+            // Anda perlu menambahkan properti ini di MerchantModel
+            rating: product.averageRating ?? 0,
+            reviews: product.totalReviews ?? 0,
+            onTap: () {
+              Get.toNamed(Routes.productDetail, arguments: product);
+            },
+          );
+        }).toList(),
       ),
     );
   }
@@ -404,13 +359,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRatingItem(double rating, int reviews) {
+  Widget _buildRatingItem(double? rating, int? reviews) {
     return Row(
       children: [
         Icon(Icons.star, color: Colors.amber, size: Dimenssions.iconSize16),
         SizedBox(width: Dimenssions.width5),
         Text(
-          '$rating ($reviews)',
+          '${rating ?? 0} (${reviews ?? 0})',
           style: TextStyle(
             color: primaryTextColor,
             fontSize: Dimenssions.font12,

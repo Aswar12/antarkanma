@@ -11,6 +11,11 @@ class HomePageController extends GetxController {
   Timer? _refreshTimer;
 
   final ProductService productService;
+  var currentIndex = 0.obs;
+
+  void updateCurrentIndex(int index) {
+    currentIndex.value = index;
+  }
 
   HomePageController(this.productService);
 
