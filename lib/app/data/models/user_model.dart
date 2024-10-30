@@ -1,4 +1,3 @@
-// lib/app/data/models/user_model.dart
 class UserModel {
   final int id;
   final String name;
@@ -7,6 +6,7 @@ class UserModel {
   final String role; // 'USER', 'MERCHANT', 'COURIER'
   final String? username;
   final String? profilePhotoUrl;
+  final String? profilePhotoPath; // Tambahkan properti baru
 
   UserModel({
     required this.id,
@@ -16,6 +16,7 @@ class UserModel {
     required this.role,
     this.username,
     this.profilePhotoUrl,
+    this.profilePhotoPath, // Tambahkan parameter baru
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +30,7 @@ class UserModel {
           : json['roles'], // Mengambil role pertama jika merupakan array
       username: json['username'],
       profilePhotoUrl: json['profile_photo_url'],
+      profilePhotoPath: json['profile_photo_path'], // Ambil dari JSON
     );
   }
 
@@ -41,6 +43,7 @@ class UserModel {
       'roles': role, // Pastikan ini sesuai dengan format yang diharapkan
       'username': username,
       'profile_photo_url': profilePhotoUrl,
+      'profile_photo_path': profilePhotoPath, // Sertakan dalam JSON
     };
   }
 
@@ -55,7 +58,8 @@ class UserModel {
         other.phoneNumber == phoneNumber &&
         other.role == role &&
         other.username == username &&
-        other.profilePhotoUrl == profilePhotoUrl;
+        other.profilePhotoUrl == profilePhotoUrl &&
+        other.profilePhotoPath == profilePhotoPath; // Tambahkan perbandingan
   }
 
   @override
@@ -66,7 +70,8 @@ class UserModel {
         phoneNumber.hashCode ^
         role.hashCode ^
         username.hashCode ^
-        profilePhotoUrl.hashCode;
+        profilePhotoUrl.hashCode ^
+        profilePhotoPath.hashCode; // Tambahkan hashCode
   }
 
   UserModel copyWith({
@@ -77,6 +82,7 @@ class UserModel {
     String? role,
     String? username,
     String? profilePhotoUrl,
+    String? profilePhotoPath, // Tambahkan parameter baru
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -86,6 +92,8 @@ class UserModel {
       role: role ?? this.role,
       username: username ?? this.username,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+      profilePhotoPath:
+          profilePhotoPath ?? this.profilePhotoPath, // Tambahkan parameter baru
     );
   }
 }

@@ -6,8 +6,6 @@ import 'package:antarkanma/app/routes/app_pages.dart';
 import 'package:antarkanma/app/utils/image_viewer_page.dart';
 import 'package:antarkanma/app/widgets/custom_snackbar.dart';
 import 'package:antarkanma/theme.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -335,21 +333,45 @@ class ProductDetailPage extends GetView<ProductDetailController> {
   }
 
   Widget _buildReviewerAvatar(ProductReviewModel review) {
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: primaryColor.withOpacity(0.1),
-      backgroundImage: review.user?.profilePhotoUrl != null
-          ? NetworkImage(review.user!.profilePhotoUrl!)
-          : null,
-      child: review.user?.profilePhotoUrl == null
-          ? Text(
-              (review.user?.name ?? 'U')[0].toUpperCase(),
-              style: TextStyle(
-                color: primaryColor,
-                fontWeight: FontWeight.bold,
+    final String avatarUrl = review.user?.profilePhotoPath ?? '';
+    final String name = review.user?.name ?? 'U';
+
+    return ClipOval(
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: primaryColor.withOpacity(0.1),
+        ),
+        child: avatarUrl.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: avatarUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                ),
+                errorWidget: (context, url, error) => Center(
+                  child: Text(
+                    name[0].toUpperCase(),
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              )
+            : Center(
+                child: Text(
+                  name[0].toUpperCase(),
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            )
-          : null,
+      ),
     );
   }
 
