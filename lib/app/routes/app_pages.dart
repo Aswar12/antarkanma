@@ -13,6 +13,7 @@ import 'package:antarkanma/app/modules/user/views/add_edit_address_page.dart';
 import 'package:antarkanma/app/modules/user/views/address_page.dart';
 import 'package:antarkanma/app/modules/user/views/cart_page.dart';
 import 'package:antarkanma/app/modules/user/views/chat_page.dart';
+import 'package:antarkanma/app/modules/user/views/checkout_page.dart';
 import 'package:antarkanma/app/modules/user/views/home_page.dart';
 import 'package:antarkanma/app/modules/user/views/map_picker_page.dart';
 import 'package:antarkanma/app/modules/user/views/order_page.dart';
@@ -114,7 +115,12 @@ class AppPages {
         ),
         GetPage(
           name: '/map-picker',
-          page: () => MapPickerView(),
+          page: () => const MapPickerView(),
+        ),
+        GetPage(
+          name: '/checkout',
+          page: () => const CheckoutPage(), // Halaman Checkout
+          binding: UserBinding(), // Bindings sesuai kebutuhan
         ),
       ],
     ),

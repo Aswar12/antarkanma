@@ -6,7 +6,6 @@ class UserLocationModel {
   final int userId;
   final String? customerName;
   final String address;
-  final String province;
   final String city;
   final String district;
   final String postalCode;
@@ -32,7 +31,6 @@ class UserLocationModel {
     required this.userId,
     this.customerName,
     required this.address,
-    required this.province,
     required this.city,
     required this.district,
     required this.postalCode,
@@ -54,7 +52,6 @@ class UserLocationModel {
       userId: json['user_id'] as int,
       customerName: json['customer_name'] as String?,
       address: json['address'] as String,
-      province: json['province'] as String,
       city: json['city'] as String,
       district: json['district'] as String,
       postalCode: json['postal_code'] as String,
@@ -83,7 +80,6 @@ class UserLocationModel {
       'user_id': userId,
       'customer_name': customerName,
       'address': address,
-      'province': province,
       'city': city,
       'district': district,
       'postal_code': postalCode,
@@ -105,7 +101,6 @@ class UserLocationModel {
     int? userId,
     String? customerName,
     String? address,
-    String? province,
     String? city,
     String? district,
     String? postalCode,
@@ -125,7 +120,6 @@ class UserLocationModel {
       userId: userId ?? this.userId,
       customerName: customerName ?? this.customerName,
       address: address ?? this.address,
-      province: province ?? this.province,
       city: city ?? this.city,
       district: district ?? this.district,
       postalCode: postalCode ?? this.postalCode,
@@ -157,7 +151,7 @@ class UserLocationModel {
   }
 
   String get fullAddress {
-    return '$address, $district, $city, $province $postalCode';
+    return '$address, $district, $city,  $postalCode';
   }
 
   String get shortAddress {
@@ -187,7 +181,6 @@ class UserLocationModel {
         other.userId == userId &&
         other.customerName == customerName &&
         other.address == address &&
-        other.province == province &&
         other.city == city &&
         other.district == district &&
         other.postalCode == postalCode &&
@@ -210,7 +203,6 @@ class UserLocationModel {
       userId,
       customerName,
       address,
-      province,
       city,
       district,
       postalCode,
@@ -229,7 +221,7 @@ class UserLocationModel {
 
   @override
   String toString() {
-    return 'UserLocationModel(id: $id, userId: $userId, customerName: $customerName, address: $address, province: $province, city: $city, district: $district, postalCode: $postalCode, latitude: $latitude, longitude: $longitude, addressType: $addressType, phoneNumber: $phoneNumber, isDefault: $isDefault, notes: $notes, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+    return 'UserLocationModel(id: $id, userId: $userId, customerName: $customerName, address: $address, city: $city, district: $district, postalCode: $postalCode, latitude: $latitude, longitude: $longitude, addressType: $addressType, phoneNumber: $phoneNumber, isDefault: $isDefault, notes: $notes, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
   }
 }
 
@@ -239,7 +231,6 @@ class UninitializedUserLocationModel extends UserLocationModel {
           userId: 0,
           customerName: null,
           address: '',
-          province: '',
           city: '',
           district: '',
           postalCode: '',
@@ -282,7 +273,6 @@ extension UserLocationListExtension on List<UserLocationModel> {
       final searchableText = '''
         ${location.customerName ?? ''}
         ${location.address}
-        ${location.province}
         ${location.city}
         ${location.district}
         ${location.postalCode}
@@ -341,9 +331,6 @@ extension UserLocationValidationExtension on UserLocationModel {
     if (address.isEmpty) {
       return 'Alamat tidak boleh kosong';
     }
-    if (province.isEmpty) {
-      return 'Provinsi tidak boleh kosong';
-    }
     if (city.isEmpty) {
       return 'Kota tidak boleh kosong';
     }
@@ -388,7 +375,6 @@ extension UserLocationFormattingExtension on UserLocationModel {
       'user_id': userId.toString(),
       'customer_name': customerName ?? '',
       'address': address,
-      'province': province,
       'city': city,
       'district': district,
       'postal_code': postalCode,

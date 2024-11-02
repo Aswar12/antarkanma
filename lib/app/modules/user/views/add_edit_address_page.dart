@@ -94,7 +94,6 @@ class _AddressFormState extends State<AddressForm> {
         TextEditingController(text: widget.address?.postalCode);
 
     // Inisialisasi nilai dropdown
-    _selectedProvince = widget.address?.province ?? provinces[0];
     _selectedCity = widget.address?.city ?? cities[0];
     _selectedDistrict = widget.address?.district;
   }
@@ -189,28 +188,6 @@ class _AddressFormState extends State<AddressForm> {
                 value!.isEmpty ? 'Nama penerima harus diisi' : null,
             icon:
                 'assets/icon_name.png', // Menggunakan icon_name.png yang tersedia
-          ),
-          _buildDropdownField(
-            label: 'Provinsi',
-            value: _selectedProvince,
-            items: provinces,
-            onChanged: (value) {
-              setState(() {
-                _selectedProvince = value;
-              });
-            },
-            hintText: 'Pilih Provinsi',
-          ),
-          _buildDropdownField(
-            label: 'Kabupaten/Kota',
-            value: _selectedCity,
-            items: cities,
-            onChanged: (value) {
-              setState(() {
-                _selectedCity = value;
-              });
-            },
-            hintText: 'Pilih Kabupaten/Kota',
           ),
           _buildDropdownField(
             label: 'Kecamatan',
@@ -505,7 +482,6 @@ class _AddressFormState extends State<AddressForm> {
                             : Icons.location_on,
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 8),
                       Text(
                         widget.address == null
                             ? 'Tambah Alamat'
@@ -513,6 +489,7 @@ class _AddressFormState extends State<AddressForm> {
                         style: primaryTextStyle.copyWith(
                             fontSize: Dimenssions.font18,
                             color: backgroundColor1),
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -527,40 +504,62 @@ class _AddressFormState extends State<AddressForm> {
   }
 
   void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) {
+      showCustomSnackbar(
+        title: 'Peringatan',
+        message: 'Mohon lengkapi semua field yang wajib diisi',
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    if (_selectedDistrict == null) {
+      showCustomSnackbar(
+        title: 'Peringatan',
+        message: 'Mohon pilih kecamatan',
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    if (_latitude == 0.0 || _longitude == 0.0) {
+      showCustomSnackbar(
+        title: 'Peringatan',
+        message: 'Silakan pilih lokasi dari peta',
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    try {
       final newAddress = UserLocationModel(
         id: widget.address?.id,
         userId: widget.address?.userId ?? 0,
-        customerName: _customerNameController.text,
-        address: _addressController.text,
-        province: widget.address?.province ?? '',
-        city: widget.address?.city ?? '',
-        district: widget.address?.district ?? '',
-        postalCode: widget.address?.postalCode ?? '',
-        latitude: _latitude, // Menggunakan nilai latitude yang baru
-        longitude: _longitude, // Menggunakan nilai longitude yang baru
-        phoneNumber: _phoneNumberController.text,
+        customerName: _customerNameController.text.trim(),
+        address: _addressController.text.trim(),
+        city: _selectedCity!,
+        district: _selectedDistrict!,
+        postalCode: _postalCodeController.text.trim(),
+        latitude: _latitude,
+        longitude: _longitude,
+        phoneNumber: _phoneNumberController.text.trim(),
         addressType: _selectedAddressType,
         isDefault: _isDefault,
-        notes: _notesController.text,
+        notes: _notesController.text.trim(),
       );
-      if (_latitude == 0.0 || _longitude == 0.0) {
-        showCustomSnackbar(
-          title: 'Peringatan',
-          message: 'Silakan pilih lokasi dari peta terlebih dahulu',
-          backgroundColor: Colors.orange,
-        );
-        return;
-      }
-      bool success;
-      if (widget.address == null) {
-        success = await controller.addAddress(newAddress);
-      } else {
-        success = await controller.updateAddress(newAddress);
-      }
+
+      bool success = await Get.showOverlay(
+        asyncFunction: () async {
+          return widget.address == null
+              ? await controller.addAddress(newAddress)
+              : await controller.updateAddress(newAddress);
+        },
+        loadingWidget: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
 
       if (success) {
-        Get.back();
         showCustomSnackbar(
           title: 'Sukses',
           message: widget.address == null
@@ -568,13 +567,14 @@ class _AddressFormState extends State<AddressForm> {
               : 'Alamat berhasil diperbarui',
           backgroundColor: Colors.green,
         );
-      } else {
-        showCustomSnackbar(
-          title: 'Gagal',
-          message: controller.errorMessage.value,
-          backgroundColor: Colors.red,
-        );
+        Get.offNamed('/main/address');
       }
+    } catch (e) {
+      showCustomSnackbar(
+        title: 'Error',
+        message: e.toString(),
+        backgroundColor: Colors.red,
+      );
     }
   }
 

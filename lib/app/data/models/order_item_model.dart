@@ -1,3 +1,4 @@
+import 'package:antarkanma/app/data/models/variant_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:antarkanma/app/data/models/product_model.dart';
@@ -27,6 +28,7 @@ class OrderItemModel {
     this.status = 'PENDING',
     this.createdAt,
     this.updatedAt,
+    VariantModel? selectedVariant,
   });
 
   // Getter untuk total harga

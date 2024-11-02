@@ -98,7 +98,7 @@ class ProductTile extends StatelessWidget {
                         Icon(
                           Icons.store,
                           size: Dimenssions.iconSize16,
-                          color: Colors.blue,
+                          color: logoColor,
                         ),
                         SizedBox(width: Dimenssions.width5),
                         Expanded(

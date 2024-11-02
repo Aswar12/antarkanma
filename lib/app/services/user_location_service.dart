@@ -9,7 +9,9 @@ class UserLocationService extends GetxService {
   final StorageService _storageService = StorageService.instance;
   final UserLocationProvider _userLocationProvider = UserLocationProvider();
   final AuthService _authService = Get.find<AuthService>();
-
+  static final UserLocationService _instance = UserLocationService._internal();
+  factory UserLocationService() => _instance;
+  UserLocationService._internal();
   final RxList<UserLocationModel> userLocations = <UserLocationModel>[].obs;
   final Rx<UserLocationModel?> defaultLocation = Rx<UserLocationModel?>(null);
 
@@ -84,39 +86,37 @@ class UserLocationService extends GetxService {
         _userLocationsKey, userLocations.map((loc) => loc.toJson()).toList());
   }
 
+  bool validateLocation(UserLocationModel location) {
+    return location.customerName!.isNotEmpty &&
+        location.address.isNotEmpty &&
+        location.city.isNotEmpty &&
+        location.postalCode.isNotEmpty &&
+        location.phoneNumber.isNotEmpty;
+  }
+
   Future<bool> addUserLocation(UserLocationModel location) async {
     try {
       final token = _authService.getToken();
-      if (token == null) {
-        showCustomSnackbar(
-            title: 'Error', message: 'Token tidak valid', isError: true);
-        return false;
-      }
+      if (token == null) throw Exception('Token tidak valid');
 
       final response =
           await _userLocationProvider.addUserLocation(token, location.toJson());
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         final newLocation = UserLocationModel.fromJson(response.data['data']);
         userLocations.add(newLocation);
         if (newLocation.isDefault) {
+          // Nonaktifkan default sebelumnya
+          for (var loc in userLocations) {
+            if (loc.id != newLocation.id) loc.isDefault = false;
+          }
           updateDefaultLocation();
         }
         saveLocationsToLocal();
-        showCustomSnackbar(
-            title: 'Sukses', message: 'Lokasi berhasil ditambahkan');
         return true;
       }
-
-      showCustomSnackbar(
-          title: 'Error',
-          message: response.data['message'] ?? 'Gagal menambahkan lokasi',
-          isError: true);
-      return false;
+      throw Exception(response.data['message'] ?? 'Gagal menambahkan lokasi');
     } catch (e) {
-      showCustomSnackbar(
-          title: 'Error',
-          message: 'Gagal menambahkan lokasi: ${e.toString()}',
-          isError: true);
+      showCustomSnackbar(title: 'Error', message: e.toString(), isError: true);
       return false;
     }
   }

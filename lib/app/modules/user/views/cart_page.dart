@@ -468,7 +468,7 @@ class CartPage extends GetView<CartController> {
               builder: (controller) => ElevatedButton(
                 onPressed: controller.itemCount > 0
                     ? () {
-                        Get.toNamed('/checkout', arguments: {
+                        Get.toNamed('/main/checkout', arguments: {
                           'merchantItems': controller.merchantItems,
                           'type': 'cart',
                         });

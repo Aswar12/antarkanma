@@ -1,4 +1,5 @@
 import 'package:antarkanma/app/controllers/cart_controller.dart';
+import 'package:antarkanma/app/controllers/checkout_controller.dart';
 import 'package:antarkanma/app/controllers/homepage_controller.dart';
 import 'package:antarkanma/app/controllers/map_picker_controller.dart';
 import 'package:antarkanma/app/controllers/product_detail_controller.dart';
@@ -29,6 +30,8 @@ class UserBinding extends Bindings {
       () => UserLocationService(),
       fenix: true,
     );
+
+    Get.lazyPut(() => CheckoutController());
     Get.lazyPut<MapPickerController>(() => MapPickerController());
     Get.lazyPut<UserLocationController>(
       () => UserLocationController(

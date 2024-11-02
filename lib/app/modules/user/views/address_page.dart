@@ -3,6 +3,7 @@
 import 'package:antarkanma/app/controllers/user_location_controller.dart';
 import 'package:antarkanma/app/data/models/user_location_model.dart';
 import 'package:antarkanma/app/widgets/custom_snackbar.dart';
+import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -12,6 +13,7 @@ class AddressPage extends GetView<UserLocationController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor8,
       appBar: AppBar(
         title: const Text('Alamat Saya'),
         actions: [
@@ -115,8 +117,12 @@ class AddressPage extends GetView<UserLocationController> {
           children: [
             Text(address.fullAddress),
             Text(address.phoneNumber),
-            Text(address.addressType,
-                style: const TextStyle(color: Colors.grey)),
+            Text(
+              address.addressType,
+              style: TextStyle(
+                color: logoColorSecondary,
+              ),
+            ),
           ],
         ),
         onTap: () => _showAddressOptions(address),
@@ -131,17 +137,27 @@ class AddressPage extends GetView<UserLocationController> {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit Alamat'),
+              iconColor: logoColorSecondary,
+              leading: Icon(
+                Icons.edit,
+                color: logoColorSecondary,
+              ),
+              title: Text(
+                'Edit Alamat',
+                style: primaryTextStyle,
+              ),
               onTap: () {
                 Get.back();
-                Get.toNamed('/edit-address', arguments: address);
+                Get.toNamed('/main/edit-address', arguments: address);
               },
             ),
             if (!address.isDefault)
               ListTile(
                 leading: const Icon(Icons.check_circle_outline),
-                title: const Text('Jadikan Alamat Utama'),
+                title: Text(
+                  'Jadikan Alamat Utama',
+                  style: primaryTextStyle,
+                ),
                 onTap: () {
                   Get.back();
                   _setDefaultAddress(address);

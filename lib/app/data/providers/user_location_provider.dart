@@ -105,7 +105,7 @@ class UserLocationProvider {
       String token, int locationId, Map<String, dynamic> data) async {
     try {
       return await _dio.put(
-        '/user/locations/$locationId',
+        '/user-locations/$locationId',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -120,7 +120,7 @@ class UserLocationProvider {
   Future<Response> deleteUserLocation(String token, int locationId) async {
     try {
       return await _dio.delete(
-        '/user/locations/$locationId',
+        '/user-locations/$locationId',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -134,7 +134,7 @@ class UserLocationProvider {
   Future<Response> setDefaultLocation(String token, int locationId) async {
     try {
       return await _dio.put(
-        '/user/locations/$locationId/set-default',
+        '/user-locations/$locationId/set-default',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -150,7 +150,7 @@ class UserLocationProvider {
       {double radius = 5000}) async {
     try {
       return await _dio.get(
-        '/user/locations/nearby',
+        '/user-locations/nearby',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -185,7 +185,7 @@ class UserLocationProvider {
   Future<Response> searchLocations(String token, String keyword) async {
     try {
       return await _dio.get(
-        '/user/locations/search',
+        '/user-locations/search',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
