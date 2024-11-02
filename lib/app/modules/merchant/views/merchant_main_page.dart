@@ -26,7 +26,7 @@ class _MerchantMainPageState extends State<MerchantMainPage> {
         case 2:
           return const OrderManagementPage(); // Halaman untuk manajemen pesanan
         case 3:
-          return const ProfilePage(); // Halaman profil
+          return ProfilePage(); // Halaman profil
         default:
           return const MerchantHomePage();
       }

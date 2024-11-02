@@ -97,7 +97,7 @@ class SignInPage extends GetView<AuthController> {
       hintText: 'Masukkan Email atau Nomor WA',
       controller: controller.identifierController,
       validator: controller.validateIdentifier,
-      iconPath: 'assets/icon_email.png',
+      icon: 'assets/icon_email.png',
     );
   }
 
@@ -108,7 +108,7 @@ class SignInPage extends GetView<AuthController> {
       controller: controller.passwordController,
       validator: controller.validatePassword,
       initialObscureText: true,
-      iconPath: 'assets/icon_password.png',
+      icon: 'assets/icon_password.png',
       showVisibilityToggle: true,
     );
   }

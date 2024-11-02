@@ -9,9 +9,12 @@ import 'package:antarkanma/app/modules/courier/courier_binding.dart';
 import 'package:antarkanma/app/modules/merchant/views/merchant_main_page.dart';
 import 'package:antarkanma/app/modules/splash/views/splash_page.dart';
 import 'package:antarkanma/app/modules/user/user_binding.dart';
+import 'package:antarkanma/app/modules/user/views/add_edit_address_page.dart';
+import 'package:antarkanma/app/modules/user/views/address_page.dart';
 import 'package:antarkanma/app/modules/user/views/cart_page.dart';
 import 'package:antarkanma/app/modules/user/views/chat_page.dart';
 import 'package:antarkanma/app/modules/user/views/home_page.dart';
+import 'package:antarkanma/app/modules/user/views/map_picker_page.dart';
 import 'package:antarkanma/app/modules/user/views/order_page.dart';
 import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
 import 'package:antarkanma/app/modules/user/views/profile_page.dart';
@@ -83,7 +86,7 @@ class AppPages {
       children: [
         GetPage(
           name: '/profile',
-          page: () => const ProfilePage(),
+          page: () => ProfilePage(),
         ),
         GetPage(
           name: '/chat',
@@ -96,6 +99,22 @@ class AppPages {
         GetPage(
           name: '/home',
           page: () => const HomePage(),
+        ),
+        GetPage(
+          name: '/address',
+          page: () => const AddressPage(),
+        ),
+        GetPage(
+          name: '/add-address',
+          page: () => AddEditAddressPage(),
+        ),
+        GetPage(
+          name: '/edit-address',
+          page: () => AddEditAddressPage(),
+        ),
+        GetPage(
+          name: '/map-picker',
+          page: () => MapPickerView(),
         ),
       ],
     ),

@@ -109,9 +109,14 @@ class ProductDetailPage extends GetView<ProductDetailController> {
   // AppBar Widget
   AppBar _buildAppBar(ProductModel product) {
     return AppBar(
-      title: Text(product.name ?? 'Detail Produk'),
+      title: Text(
+        product.name ?? 'Detail Produk',
+        style: priceTextStyle.copyWith(fontSize: Dimenssions.font24),
+      ),
+      centerTitle: true,
       backgroundColor: transparentColor,
       leading: IconButton(
+        color: logoColorSecondary,
         icon: const Icon(Icons.arrow_back),
         onPressed: () => Get.back(),
       ),
@@ -124,7 +129,10 @@ class ProductDetailPage extends GetView<ProductDetailController> {
             alignment: Alignment.topRight,
             children: [
               IconButton(
-                icon: Icon(Icons.shopping_cart, color: logoColorSecondary),
+                icon: Icon(
+                  Icons.shopping_cart,
+                  color: logoColorSecondary,
+                ),
                 onPressed: () {
                   try {
                     Get.toNamed('/cart');

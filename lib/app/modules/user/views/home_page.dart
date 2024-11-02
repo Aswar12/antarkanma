@@ -22,11 +22,32 @@ class _HomePageState extends State<HomePage> {
   final AuthService _authService = Get.find<AuthService>();
   final CarouselController carouselController = CarouselController();
   late HomePageController controller;
-
+  final GlobalKey _carouselKey = GlobalKey();
+  bool _isCategorySticky = false;
+  final ScrollController _scrollController = ScrollController();
   @override
   void initState() {
     super.initState();
     controller = Get.find<HomePageController>();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final RenderBox? carouselBox =
+        _carouselKey.currentContext?.findRenderObject() as RenderBox?;
+    if (carouselBox != null) {
+      final carouselHeight = carouselBox.size.height;
+      setState(() {
+        _isCategorySticky = _scrollController.offset > carouselHeight;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -36,103 +57,186 @@ class _HomePageState extends State<HomePage> {
         return const Center(child: CircularProgressIndicator());
       }
 
-      return RefreshIndicator(
-        onRefresh: controller.refreshProducts,
-        child: ListView(
-          children: [
-            header(),
-            popularProductsTitle(),
-            popularProducts(),
-            listProductsTitle(),
-            listProducts(),
-          ],
+      return Scaffold(
+        backgroundColor: backgroundColor3,
+        body: NestedScrollView(
+          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                backgroundColor: backgroundColor3,
+                floating: true,
+                snap: true,
+                pinned: false,
+                title: _buildSearchBar(),
+                actions: [
+                  Padding(
+                    padding: EdgeInsets.only(right: Dimenssions.width20),
+                    child: Obx(() {
+                      final user = _authService.getUser();
+                      if (user == null) {
+                        return Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                          ),
+                        );
+                      }
+                      return ProfileImage(
+                        user: user,
+                        size: 40,
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ];
+          },
+          body: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  popularProductsTitle(),
+                  popularProducts(),
+                  const SizedBox(height: 10),
+                ]),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverAppBarDelegate(
+                  minHeight: 35,
+                  maxHeight: 35,
+                  child: Container(
+                    color: Colors.white,
+                    child: _buildCategories(),
+                  ),
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  listProductsTitle(),
+                  listProducts(),
+                ]),
+              ),
+            ],
+          ),
         ),
       );
     });
   }
 
-  Widget header() {
+// Modifikasi _buildCategories untuk menambahkan shadow
+  Widget _buildCategories() {
     return Container(
-      margin: EdgeInsets.only(
-        top: Dimenssions.height25,
-        left: Dimenssions.width20,
-        right: Dimenssions.width25,
+      decoration: BoxDecoration(
+        color: backgroundColor3,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/search');
-              },
-              child: Container(
-                height: Dimenssions.height40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: backgroundColor6, width: 2),
-                  borderRadius: BorderRadius.circular(Dimenssions.radius15),
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 10.0),
-                    Icon(Icons.search_outlined, color: backgroundColor6),
-                    SizedBox(width: Dimenssions.width10),
-                    Text(
-                      'Apa Ku AntarkanKi ?',
-                      style: subtitleTextStyle.copyWith(
-                        fontSize: Dimenssions.font14,
-                        color: backgroundColor6,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(
+          horizontal: Dimenssions.width10,
+          vertical: 2,
+        ),
+        child: Row(
+          children: [
+            _buildCategoryItem("All"),
+            _buildCategoryItem("Electronics"),
+            _buildCategoryItem("Fashion"),
+            _buildCategoryItem("Home"),
+            _buildCategoryItem("Beauty"),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Buat widget terpisah untuk search bar
+
+  Widget _buildCategoryItem(String category) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: Dimenssions.width5),
+      child: Obx(() {
+        bool isSelected = controller.selectedCategory.value == category;
+        return GestureDetector(
+          onTap: () => controller.selectedCategory.value = category,
+          child: Chip(
+            label: Text(category),
+            backgroundColor: isSelected ? logoColorSecondary : Colors.grey[200],
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : Colors.black,
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: Dimenssions.width10,
+              vertical: 2,
+            ),
+            side: BorderSide(
+              // Tambahkan border di sini
+              color: isSelected ? Colors.white : logoColorSecondary,
+              width: 1,
             ),
           ),
-          const SizedBox(width: 20.0),
-          GestureDetector(
-            onTap: () {
-              // Tambahkan aksi ketika foto profil ditekan
-            },
-            child: Obx(() {
-              final user = _authService.getUser();
-              if (user == null) {
-                return Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.grey,
-                  ),
-                );
-              }
-              return ProfileImage(
-                user: user,
-                size: 50,
-              );
-            }),
-          )
-        ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/search');
+      },
+      child: Container(
+        height: Dimenssions.height40,
+        decoration: BoxDecoration(
+          border: Border.all(color: backgroundColor6, width: 2),
+          borderRadius: BorderRadius.circular(Dimenssions.radius15),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 10.0),
+            Icon(Icons.search_outlined, color: backgroundColor6),
+            SizedBox(width: Dimenssions.width10),
+            Text(
+              'Apa Ku AntarkanKi ?',
+              style: subtitleTextStyle.copyWith(
+                fontSize: Dimenssions.font14,
+                color: backgroundColor6,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget popularProducts() {
     return Column(
+      key: _carouselKey,
       children: [
         CarouselSlider.builder(
           itemCount:
               controller.products.length > 4 ? 4 : controller.products.length,
           options: CarouselOptions(
             height: Dimenssions.pageView,
-            viewportFraction: 0.8,
+            viewportFraction: 0.85,
             enlargeCenterPage: true,
             autoPlayCurve: Curves.fastOutSlowIn,
             enlargeStrategy: CenterPageEnlargeStrategy.scale,
-            enlargeFactor: 0.2,
+            enlargeFactor: 0.15,
             autoPlay: controller.products.length > 1,
             autoPlayInterval: const Duration(seconds: 3),
             onPageChanged: (index, reason) {
@@ -322,7 +426,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       margin: EdgeInsets.only(top: Dimenssions.height10),
       child: Column(
-        children: controller.products.map((product) {
+        children: controller.filteredProducts.map((product) {
           return ProductTile(
             imageUrl:
                 product.galleries.isNotEmpty && product.imageUrls[0].isNotEmpty
@@ -373,5 +477,39 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate({
+    required this.minHeight,
+    required this.maxHeight,
+    required this.child,
+  });
+
+  final double minHeight;
+  final double maxHeight;
+  final Widget child;
+
+  @override
+  double get minExtent => minHeight;
+
+  @override
+  double get maxExtent => maxHeight;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return maxHeight != oldDelegate.maxHeight ||
+        minHeight != oldDelegate.minHeight ||
+        child != oldDelegate.child;
   }
 }

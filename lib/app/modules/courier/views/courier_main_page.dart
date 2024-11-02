@@ -24,7 +24,7 @@ class _CourierMainPageState extends State<CourierMainPage> {
         case 1:
           return const DeliveryManagementPage(); // Halaman untuk manajemen pengiriman
         case 2:
-          return const ProfilePage();
+          return ProfilePage();
         case 3:
           return const DeliveryListView(); // Halaman profil
         default:

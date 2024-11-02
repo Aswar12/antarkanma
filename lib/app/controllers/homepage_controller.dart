@@ -9,12 +9,22 @@ class HomePageController extends GetxController {
   var isLoading = true.obs;
   var isRefreshing = false.obs;
   Timer? _refreshTimer;
-
+  final Rx<String> selectedCategory = "All".obs;
   final ProductService productService;
   var currentIndex = 0.obs;
 
   void updateCurrentIndex(int index) {
     currentIndex.value = index;
+  }
+
+  List<ProductModel> get filteredProducts {
+    if (selectedCategory.value == "All") {
+      return products;
+    } else {
+      return products
+          .where((product) => product.category == selectedCategory.value)
+          .toList();
+    }
   }
 
   HomePageController(this.productService);

@@ -38,7 +38,7 @@ class SignUpPage extends StatelessWidget {
         hintText: 'Masukkan Nama Lengkap Kamu',
         controller: controller.nameController,
         validator: controller.validateName,
-        iconPath: 'assets/icon_name.png',
+        icon: 'assets/icon_name.png',
       );
     }
 
@@ -48,7 +48,7 @@ class SignUpPage extends StatelessWidget {
         hintText: 'Masukkan Alamat Email Kamu',
         controller: controller.emailController,
         validator: controller.validateEmail,
-        iconPath: 'assets/icon_email.png',
+        icon: 'assets/icon_email.png',
       );
     }
 
@@ -58,7 +58,7 @@ class SignUpPage extends StatelessWidget {
         hintText: 'Masukkan Nomor Telepon/Wa Kamu',
         controller: controller.phoneNumberController,
         validator: controller.validatePhoneNumber,
-        iconPath: 'assets/phone_icon.png',
+        icon: 'assets/phone_icon.png',
       );
     }
 
@@ -69,7 +69,7 @@ class SignUpPage extends StatelessWidget {
         controller: controller.passwordController,
         validator: controller.validatePassword,
         initialObscureText: true,
-        iconPath: 'assets/icon_password.png',
+        icon: 'assets/icon_password.png',
         showVisibilityToggle: true,
       );
     }
@@ -81,7 +81,7 @@ class SignUpPage extends StatelessWidget {
         controller: controller.confirmPasswordController,
         validator: controller.validateConfirmPassword,
         initialObscureText: true,
-        iconPath: 'assets/icon_password.png',
+        icon: 'assets/icon_password.png',
         showVisibilityToggle: true,
       );
     }

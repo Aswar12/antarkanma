@@ -125,12 +125,15 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     try {
       await _authService.logout();
+      await _storageService
+          .clearAuth(); // Menggunakan clearAuth() alih-alih removeUser()
       Get.offAllNamed(Routes.login);
       showCustomSnackbar(
         title: 'Logout Berhasil',
         message: 'Anda telah berhasil keluar dari akun.',
       );
     } catch (e) {
+      print('Error during logout: $e');
       showCustomSnackbar(
         title: 'Logout Gagal',
         message: 'Gagal logout. Silakan coba lagi.',
@@ -189,5 +192,61 @@ class AuthController extends GetxController {
     nameController.dispose(); // Dispose kontroler nama
     emailController.dispose(); // Dispose kontroler email
     super.onClose();
+  }
+
+  Future<void> updateProfileImage() async {
+    // Implementasi untuk memilih dan mengupdate foto profil
+    try {
+      // Tambahkan logika untuk memilih gambar
+      // Contoh menggunakan image_picker
+      // final ImagePicker _picker = ImagePicker();
+      // final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      // if (image != null) {
+      //   // Upload image dan update profile
+      // }
+    } catch (e) {
+      print('Error updating profile image: $e');
+      showCustomSnackbar(
+        title: 'Error',
+        message: 'Gagal mengupdate foto profil',
+        isError: true,
+      );
+    }
+  }
+
+  // Untuk menangani rating
+  final RxInt _rating = 0.obs;
+  int get rating => _rating.value;
+
+  void setRating(int value) {
+    if (value >= 1 && value <= 5) {
+      _rating.value = value;
+    }
+  }
+
+  Future<void> submitRating() async {
+    try {
+      if (_rating.value > 0) {
+        // Implementasi untuk mengirim rating ke backend
+        // await _authService.submitRating(_rating.value);
+        showCustomSnackbar(
+          title: 'Sukses',
+          message: 'Terima kasih atas penilaian Anda!',
+        );
+      } else {
+        showCustomSnackbar(
+          title: 'Error',
+          message: 'Silakan berikan rating terlebih dahulu',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      print('Error submitting rating: $e');
+      showCustomSnackbar(
+        title: 'Error',
+        message: 'Gagal mengirim rating',
+        isError: true,
+      );
+    }
   }
 }

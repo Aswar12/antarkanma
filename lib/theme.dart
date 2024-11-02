@@ -29,6 +29,7 @@ Color backgroundColor4 = const Color(0xff252836);
 Color backgroundColor5 = const Color(0xFFD4D1D1);
 Color backgroundColor6 = const Color(0xFF000000);
 Color backgroundColor7 = const Color(0xFF000000);
+Color backgroundColor8 = const Color(0XFFf3f5f4);
 Color primaryTextColor = const Color(0xFF0C0C0C);
 Color secondaryTextColor = const Color(0xFF585858);
 Color subtitleColor = const Color(0xFF8E8E97);
@@ -36,7 +37,21 @@ Color transparentColor = Colors.transparent;
 Color blackColor = const Color(0xff2E2E2E);
 Color logoColor = const Color(0xff020238);
 Color logoColorSecondary = const Color(0xfffffff6600);
-
+const MaterialColor primarySwatch = MaterialColor(
+  0xFFFF6600,
+  <int, Color>{
+    50: Color(0xFFFFECE0),
+    100: Color(0xFFFFD4B3),
+    200: Color(0xFFFFB980),
+    300: Color(0xFFFF9D4D),
+    400: Color(0xFFFF8726),
+    500: Color(0xFFFF6600), // warna utama
+    600: Color(0xFFFF5E00),
+    700: Color(0xFFFF5300),
+    800: Color(0xFFFF4900),
+    900: Color(0xFFFF3600),
+  },
+);
 TextStyle primaryTextStyle = GoogleFonts.palanquinDark(
   color: primaryTextColor,
 );

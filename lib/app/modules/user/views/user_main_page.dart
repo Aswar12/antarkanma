@@ -22,7 +22,7 @@ class UserMainPage extends GetView<UserMainController> {
       const HomePage(),
       const CartPage(),
       const OrderPage(),
-      const ProfilePage(),
+      ProfilePage(),
     ];
 
     Widget body() {
@@ -40,7 +40,7 @@ class UserMainPage extends GetView<UserMainController> {
         String assetPath, String label, int index) {
       return BottomNavigationBarItem(
         icon: Container(
-          margin: EdgeInsets.only(top: Dimenssions.height10),
+          margin: EdgeInsets.only(top: Dimenssions.height5),
           child: GetX<UserMainController>(
             builder: (_) => Image.asset(
               assetPath,
@@ -57,9 +57,9 @@ class UserMainPage extends GetView<UserMainController> {
 
     Widget customBottomNav() {
       return ClipRRect(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(Dimenssions.radius20),
-        ),
+        // borderRadius: BorderRadius.vertical(
+        //   top: Radius.circular(Dimenssions.radius20),
+        // ),
         child: Container(
           decoration: BoxDecoration(
             boxShadow: [

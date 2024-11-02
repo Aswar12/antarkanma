@@ -26,7 +26,10 @@ class CartPage extends GetView<CartController> {
         ),
         centerTitle: true,
         backgroundColor: Colors.white, // Mengubah warna background
-        foregroundColor: primaryTextColor, // Mengubah warna teks dan icon
+        foregroundColor: primaryTextColor,
+        iconTheme: IconThemeData(
+          color: logoColorSecondary, // Mengubah warna icon
+        ), // Mengubah warna teks dan icon
         actions: [
           IconButton(
             icon: Icon(
@@ -139,6 +142,7 @@ class CartPage extends GetView<CartController> {
 
   Widget _buildMerchantSection(int merchantId, List<CartItemModel> items) {
     return Card(
+      color: backgroundColor2,
       margin: EdgeInsets.only(bottom: Dimenssions.height15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 4,
@@ -151,7 +155,8 @@ class CartPage extends GetView<CartController> {
                 vertical: Dimenssions.height10),
             child: Text(
               items.first.merchant.name,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: primaryTextStyle.copyWith(
+                  fontSize: Dimenssions.font18, fontWeight: semiBold),
             ),
           ),
           const Divider(height: 1),
@@ -234,8 +239,8 @@ class CartPage extends GetView<CartController> {
                       child: item.product.imageUrls.isNotEmpty
                           ? Image.network(
                               item.product.imageUrls.first,
-                              width: Dimenssions.height100,
-                              height: Dimenssions.height100,
+                              width: Dimenssions.height90,
+                              height: Dimenssions.height90,
                               fit: BoxFit.cover,
                               loadingBuilder:
                                   (context, child, loadingProgress) {
@@ -246,15 +251,15 @@ class CartPage extends GetView<CartController> {
                               errorBuilder: (context, error, stackTrace) =>
                                   Image.asset(
                                 'assets/image_shoes.png',
-                                width: Dimenssions.height100,
-                                height: Dimenssions.height100,
+                                width: Dimenssions.height90,
+                                height: Dimenssions.height90,
                                 fit: BoxFit.cover,
                               ),
                             )
                           : Image.asset(
                               'assets/image_shoes.png',
-                              width: Dimenssions.height100,
-                              height: Dimenssions.height100,
+                              width: Dimenssions.height90,
+                              height: Dimenssions.height90,
                               fit: BoxFit.cover,
                             ),
                     ),
@@ -266,9 +271,37 @@ class CartPage extends GetView<CartController> {
                         children: [
                           Text(
                             item.product.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: primaryTextStyle.copyWith(
+                              fontWeight: semiBold,
+                              fontSize: Dimenssions.font18,
+                            ),
                           ),
                           SizedBox(height: Dimenssions.height5),
+
+                          // Menampilkan variant jika ada
+                          if (item.selectedVariant != null) ...[
+                            Row(
+                              children: [
+                                Text(
+                                  '${item.selectedVariant!.name}: ',
+                                  style: primaryTextStyle.copyWith(
+                                    fontSize: Dimenssions.font14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                Text(
+                                  item.selectedVariant!.value,
+                                  style: primaryTextStyle.copyWith(
+                                    fontSize: Dimenssions.font14,
+                                    color: Colors.grey[600],
+                                    fontWeight: medium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: Dimenssions.height5),
+                          ],
+
                           Text(
                             NumberFormat.currency(
                               locale: 'id',
@@ -289,35 +322,87 @@ class CartPage extends GetView<CartController> {
             ),
             // Kontrol kuantitas
             Positioned(
-              bottom: 10,
-              left: Dimenssions.height100 +
-                  Dimenssions.width40, // Sesuaikan posisi sesuai kebutuhan
+              bottom: Dimenssions.height15,
+              left: Dimenssions.height100 + Dimenssions.width80,
               child: Container(
                 height: Dimenssions.height35,
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(
+                      8), // Mengubah radius menjadi lebih kecil
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove, size: 18),
-                      onPressed: () =>
-                          controller.decrementQuantity(merchantId, index),
-                      color: logoColorSecondary,
-                    ),
-                    Text(
-                      '${item.quantity}',
-                      style: primaryTextStyle.copyWith(
-                        fontSize: Dimenssions.font16,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            bottomLeft: Radius.circular(8),
+                          ),
+                          onTap: () =>
+                              controller.decrementQuantity(merchantId, index),
+                          child: Container(
+                            width: Dimenssions.height35,
+                            height: Dimenssions.height35,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.remove,
+                              size: 18,
+                              color: logoColorSecondary,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.add, size: 18),
-                      onPressed: () =>
-                          controller.incrementQuantity(merchantId, index),
-                      color: logoColorSecondary,
+                    Container(
+                      width: Dimenssions.height35,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${item.quantity}',
+                        style: primaryTextStyle.copyWith(
+                          fontSize: Dimenssions.font16,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          ),
+                          onTap: () =>
+                              controller.incrementQuantity(merchantId, index),
+                          child: Container(
+                            width: Dimenssions.height35,
+                            height: Dimenssions.height35,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.add,
+                              size: 18,
+                              color: logoColorSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -372,7 +457,6 @@ class CartPage extends GetView<CartController> {
                       ).format(controller.totalPrice),
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
                         color: logoColorSecondary,
                       ),
                     ),
@@ -404,7 +488,6 @@ class CartPage extends GetView<CartController> {
                   'Checkout',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),

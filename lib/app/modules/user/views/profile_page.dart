@@ -1,195 +1,333 @@
 import 'package:antarkanma/app/controllers/auth_controller.dart';
+import 'package:antarkanma/app/controllers/user_location_controller.dart';
+import 'package:antarkanma/app/data/models/user_model.dart';
 import 'package:antarkanma/app/services/auth_service.dart';
+import 'package:antarkanma/app/services/user_location_service.dart';
 import 'package:antarkanma/app/widgets/logout_confirmation_dialog.dart';
+import 'package:antarkanma/app/widgets/profile_image.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ProfilePage extends GetView<AuthController> {
-  const ProfilePage({super.key});
+  final AuthService authService = Get.find<AuthService>();
+  late final UserLocationController locationController;
+
+  ProfilePage({Key? key}) : super(key: key) {
+    if (!Get.isRegistered<UserLocationController>()) {
+      Get.put(UserLocationController(
+          locationService: Get.find<UserLocationService>()));
+    }
+    locationController = Get.find<UserLocationController>();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = Get.find<AuthService>();
-
-    Widget header() {
-      return AppBar(
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        flexibleSpace: SafeArea(
-          child: Container(
-            padding: EdgeInsets.all(Dimenssions.width30),
-            child: Row(
-              children: [
-                ClipOval(
-                  child: Image.asset(
-                    'assets/image_profile.png',
-                    width: Dimenssions.width60,
-                  ),
-                ),
-                SizedBox(width: Dimenssions.width15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        authService.userName,
-                        style: primaryTextStyle.copyWith(
-                          fontSize: Dimenssions.font24,
-                          fontWeight: medium,
-                        ),
-                      ),
-                      Text(
-                        authService.userPhone,
-                        style: subtitleTextStyle.copyWith(
-                          fontSize: Dimenssions.font16,
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                Image.asset(
-                  'assets/button_exit.png',
-                  width: Dimenssions.height25,
-                )
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    Widget menuItem(String text, VoidCallback onTap) {
-      return InkWell(
-        onTap: onTap,
-        child: Container(
-          margin: EdgeInsets.only(top: Dimenssions.height20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                text,
-                style: secondaryTextStyle.copyWith(
-                  fontSize: Dimenssions.font16,
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: logoColorSecondary,
-                size: Dimenssions.font20,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    Widget content() {
-      return Expanded(
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: Dimenssions.width30),
-          width: double.infinity,
-          decoration: BoxDecoration(color: backgroundColor3),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: Dimenssions.height25),
-              Text(
-                'Akun',
-                style: primaryTextStyle.copyWith(
-                  fontSize: Dimenssions.font18,
-                  fontWeight: semiBold,
-                ),
-              ),
-              menuItem('Edit Profil', () => Get.toNamed('/edit-profile')),
-              menuItem('Orderan Kamu', () => Get.toNamed('/orders')),
-              menuItem('Bantuan', () => Get.toNamed('/help')),
-              SizedBox(height: Dimenssions.height30),
-              Text(
-                'Umum',
-                style: primaryTextStyle.copyWith(
-                  fontSize: Dimenssions.font18,
-                  fontWeight: semiBold,
-                ),
-              ),
-              menuItem(
-                  'Kebijakan & Privasi', () => Get.toNamed('/privacy-policy')),
-              menuItem(
-                  'Ketentuan Layanan', () => Get.toNamed('/terms-of-service')),
-              menuItem('Rating Aplikasi', () => _showRatingDialog(context)),
-              const Spacer(),
-              // Di dalam ProfilePage
-              Container(
-                width: double.infinity,
-                margin: EdgeInsets.only(bottom: Dimenssions.height30),
-                child: ElevatedButton(
-                  onPressed: () => Get.dialog(const LogoutConfirmationDialog()),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding:
-                        EdgeInsets.symmetric(vertical: Dimenssions.height15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(Dimenssions.radius15),
-                    ),
-                  ),
-                  child: Text(
-                    'Logout',
-                    style: primaryTextStyle.copyWith(
-                      fontSize: Dimenssions.font16,
-                      fontWeight: medium,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        header(),
-        content(),
-      ],
+    return Scaffold(
+      body: Column(
+        children: [
+          _buildHeader(authService),
+          _buildContent(authService),
+        ],
+      ),
     );
   }
 
-  void _showRatingDialog(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('Rating Aplikasi'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                5,
-                (index) => IconButton(
-                  icon: Icon(Icons.star_border),
-                  onPressed: () {
-                    // Handle rating
-                  },
-                ),
+  Widget _buildHeader(AuthService authService) {
+    final user = authService.getUser();
+    return Obx(() => AppBar(
+          automaticallyImplyLeading: false,
+          elevation: 0,
+          backgroundColor: backgroundColor1,
+          flexibleSpace: SafeArea(
+            child: Container(
+              padding: EdgeInsets.all(Dimenssions.width30),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => controller.updateProfileImage(),
+                    child: user != null
+                        ? ProfileImage(
+                            user: user,
+                            size: Dimenssions.height55,
+                          )
+                        : CircleAvatar(
+                            radius: Dimenssions.width20,
+                            backgroundColor: Colors.grey,
+                            child:
+                                const Icon(Icons.person, color: Colors.white),
+                          ),
+                  ),
+                  SizedBox(width: Dimenssions.width15),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          authService.userName,
+                          style: primaryTextStyle.copyWith(
+                            fontSize: Dimenssions.font24,
+                            fontWeight: medium,
+                          ),
+                        ),
+                        Text(
+                          authService.userPhone,
+                          style: subtitleTextStyle.copyWith(
+                            fontSize: Dimenssions.font16,
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    color: logoColorSecondary,
+                    icon: Image.asset(
+                      color: logoColorSecondary,
+                      'assets/button_exit.png',
+                      width: Dimenssions.height25,
+                    ),
+                    onPressed: () =>
+                        Get.dialog(const LogoutConfirmationDialog()),
+                  )
+                ],
               ),
+            ),
+          ),
+        ));
+  }
+
+  Widget _buildContent(AuthService authService) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: Dimenssions.width30),
+        width: double.infinity,
+        decoration: BoxDecoration(color: backgroundColor3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: Dimenssions.height25),
+            _buildAddressCard(),
+            SizedBox(height: Dimenssions.height25),
+
+            Text(
+              'Akun',
+              style: primaryTextStyle.copyWith(
+                fontSize: Dimenssions.font18,
+                fontWeight: semiBold,
+              ),
+            ),
+            _buildMenuItem('Edit Profil', () => Get.toNamed('/edit-profile')),
+            _buildMenuItem('Orderan Kamu', () => Get.toNamed('/orders')),
+            _buildMenuItem('Bantuan', () => Get.toNamed('/help')),
+            SizedBox(height: Dimenssions.height30),
+            Text(
+              'Umum',
+              style: primaryTextStyle.copyWith(
+                fontSize: Dimenssions.font18,
+                fontWeight: semiBold,
+              ),
+            ),
+            _buildMenuItem(
+                'Kebijakan & Privasi', () => Get.toNamed('/privacy-policy')),
+            _buildMenuItem(
+                'Ketentuan Layanan', () => Get.toNamed('/terms-of-service')),
+            _buildMenuItem('Rating Aplikasi', () => _showRatingDialog()),
+            const Spacer(),
+            // _buildLogoutButton(authService),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String text, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.only(top: Dimenssions.height20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              text,
+              style: secondaryTextStyle.copyWith(
+                fontSize: Dimenssions.font16,
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: logoColorSecondary,
+              size: Dimenssions.font20,
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Batal'),
+      ),
+    );
+  }
+
+  Widget _buildAddressCard() {
+    return GetBuilder<UserLocationController>(
+      builder: (locationController) {
+        return Card(
+          color: backgroundColor2,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Dimenssions.radius15),
           ),
-          TextButton(
-            onPressed: () {
-              // Handle submit rating
-              Get.back();
-            },
-            child: Text('Kirim'),
+          child: Padding(
+            padding: EdgeInsets.all(Dimenssions.width15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Alamat Pengiriman',
+                      style: primaryTextStyle.copyWith(
+                        fontSize: Dimenssions.font16,
+                        fontWeight: semiBold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Get.toNamed('/main/address'),
+                      child: Text(
+                        'Lihat Semua',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: Dimenssions.font14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (locationController.addresses != null &&
+                    locationController.addresses!.isNotEmpty) ...[
+                  SizedBox(height: Dimenssions.height10),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: primaryColor,
+                        size: Dimenssions.font20,
+                      ),
+                      SizedBox(width: Dimenssions.width10),
+                      Expanded(
+                        child: Text(
+                          locationController.addresses!.first.fullAddress,
+                          style: secondaryTextStyle.copyWith(
+                            fontSize: Dimenssions.font14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  SizedBox(height: Dimenssions.height10),
+                  Text(
+                    'Tambahkan alamat pengiriman Anda untuk memudahkan proses pengiriman',
+                    style: secondaryTextStyle.copyWith(
+                      fontSize: Dimenssions.font14,
+                    ),
+                  ),
+                  SizedBox(height: Dimenssions.height15),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (Get.isRegistered<UserLocationController>()) {
+                          Get.toNamed('/main/add-address');
+                        } else {
+                          Get.snackbar('Error', 'Controller tidak ditemukan');
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: EdgeInsets.symmetric(
+                            vertical: Dimenssions.height10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(Dimenssions.radius15),
+                        ),
+                      ),
+                      child: Text(
+                        'Tambah Alamat',
+                        style: primaryTextStyle.copyWith(
+                          fontSize: Dimenssions.font14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  void _showRatingDialog() {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Dimenssions.radius15),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(Dimenssions.width20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Rating Aplikasi',
+                style: TextStyle(
+                  fontSize: Dimenssions.font18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: Dimenssions.height20),
+              FittedBox(
+                // Menggunakan FittedBox untuk menyesuaikan ukuran
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    5,
+                    (index) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: InkWell(
+                        onTap: () => controller.setRating(index + 1),
+                        child: const Icon(
+                          Icons.star_border,
+                          size: 32,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: Dimenssions.height20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Batal'),
+                  ),
+                  SizedBox(width: Dimenssions.width10),
+                  ElevatedButton(
+                    onPressed: () {
+                      controller.submitRating();
+                      Get.back();
+                    },
+                    child: const Text('Kirim'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
