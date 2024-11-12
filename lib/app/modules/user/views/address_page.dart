@@ -153,7 +153,10 @@ class AddressPage extends GetView<UserLocationController> {
             ),
             if (!address.isDefault)
               ListTile(
-                leading: const Icon(Icons.check_circle_outline),
+                leading: Icon(
+                  color: logoColorSecondary,
+                  Icons.check_circle_outline,
+                ),
                 title: Text(
                   'Jadikan Alamat Utama',
                   style: primaryTextStyle,

@@ -1,11 +1,20 @@
+import 'package:antarkanma/app/data/models/transaction_model.dart';
+import 'package:antarkanma/app/services/order_item_service.dart';
+import 'package:antarkanma/app/services/transaction_service.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:antarkanma/app/data/models/order_item_model.dart';
 import 'package:antarkanma/app/data/models/cart_item_model.dart';
 import 'package:antarkanma/app/controllers/cart_controller.dart';
 import 'package:antarkanma/app/data/models/user_location_model.dart';
+import 'package:antarkanma/app/controllers/auth_controller.dart'; // Import AuthController
+import 'user_location_controller.dart';
 
 class CheckoutController extends GetxController {
-  // Observable variables
+  final UserLocationController userLocationController =
+      Get.find<UserLocationController>();
+  final AuthController authController =
+      Get.find<AuthController>(); // Inisialisasi AuthController
   final isLoading = false.obs;
   final orderItems = <OrderItemModel>[].obs;
   final selectedLocation = Rx<UserLocationModel?>(null);
@@ -14,10 +23,28 @@ class CheckoutController extends GetxController {
   final deliveryFee = 0.0.obs;
   final total = 0.0.obs;
 
+  final List<String> paymentMethods = [
+    'COD',
+    'Transfer Bank',
+    'DANA',
+    'OVO',
+    'GoPay',
+  ];
+
+  void selectPaymentMethod(String method) {
+    selectedPaymentMethod.value = method;
+  }
+
   @override
   void onInit() {
     super.onInit();
+    selectedLocation.value = userLocationController.defaultAddress;
     _initializeCheckout();
+  }
+
+  void loadDefaultLocation() {
+    final defaultLocation = userLocationController.defaultAddress;
+    selectedLocation.value = defaultLocation; // Set default address
   }
 
   void _initializeCheckout() {
@@ -29,8 +56,7 @@ class CheckoutController extends GetxController {
 
         // Convert merchant items ke order items
         for (var entry in merchantItems.entries) {
-          final items = entry.value;
-          for (var cartItem in items) {
+          for (var cartItem in entry.value) {
             final orderItem = OrderItemModel(
               orderId: '', // Akan diisi setelah order dibuat
               product: cartItem.product,
@@ -63,7 +89,7 @@ class CheckoutController extends GetxController {
       (sum, item) => sum + (item.price * item.quantity),
     );
 
-    // Hitung biaya pengiriman (implementasi sederhana)
+    // Hitung biaya pengiriman
     deliveryFee.value = orderItems.isEmpty ? 0.0 : 10000.0;
 
     // Hitung total
@@ -73,8 +99,8 @@ class CheckoutController extends GetxController {
   // Getter untuk mengecek apakah checkout bisa dilakukan
   bool get canCheckout {
     return orderItems.isNotEmpty &&
-        selectedLocation.value != null &&
-        selectedPaymentMethod.value != null;
+        selectedPaymentMethod.value != null &&
+        selectedLocation.value != null;
   }
 
   // Method untuk memproses checkout
@@ -91,14 +117,49 @@ class CheckoutController extends GetxController {
     try {
       isLoading.value = true;
 
-      // TODO: Implementasi proses checkout ke backend
-      // 1. Buat order baru
-      // 2. Simpan order items
-      // 3. Buat transaksi
-      // 4. Proses pembayaran
+      // Ambil userId dari AuthController
+      final userId = userLocationController
+          .selectedLocation.value?.userId; // Ambil c dar AuthController
+      final deliveryLocationId =
+          selectedLocation.value?.id; // Ambil ID lokasi pengiriman
+
+      // Buat objek TransactionModel
+      final transaction = TransactionModel(
+        orderId: '', // Akan diisi setelah order dibuat
+        userId: userId.toString(),
+        userLocationId: deliveryLocationId.toString(),
+        totalPrice: total.value,
+        shippingPrice: deliveryFee.value,
+        paymentMethod: selectedPaymentMethod.value!,
+        status: 'PENDING',
+      );
 
       // Simulasi delay proses
       await Future.delayed(const Duration(seconds: 2));
+
+      // Simpan transaksi ke backend
+      final transactionService = Get.find<TransactionService>();
+      final isTransactionCreated =
+          await transactionService.createTransaction(transaction);
+
+      if (!isTransactionCreated) {
+        Get.snackbar('Error', 'Gagal membuat transaksi');
+        return;
+      }
+
+      // Simpan setiap order item
+      final orderItemService = Get.find<OrderItemService>();
+      for (var orderItem in orderItems) {
+        orderItem.orderId =
+            transaction.id.toString(); // Set orderId untuk setiap order item
+        final isOrderItemCreated =
+            await orderItemService.createOrderItem(orderItem);
+        if (!isOrderItemCreated) {
+          Get.snackbar(
+              'Error', 'Gagal menyimpan order item: ${orderItem.product.name}');
+          return;
+        }
+      }
 
       // Clear cart setelah checkout berhasil
       Get.find<CartController>().clearCart();
@@ -109,6 +170,9 @@ class CheckoutController extends GetxController {
         'total': total.value,
         'deliveryAddress': selectedLocation.value,
         'paymentMethod': selectedPaymentMethod.value,
+        'userId': userId, // Sertakan userId dalam argumen
+        'deliveryLocationId':
+            deliveryLocationId, // Sertakan ID lokasi pengiriman
       });
     } catch (e) {
       print('Error processing checkout: $e');
@@ -121,6 +185,12 @@ class CheckoutController extends GetxController {
       isLoading.value = false;
     }
   }
+  // Misalkan ini adalah variabel untuk menyimpan metode pembayaran
+
+  // Metode untuk mengatur metode pembayaran
+  void setPaymentMethod(String method) {
+    selectedPaymentMethod.value = method;
+  }
 
   // Method untuk mengubah lokasi pengiriman
   void setDeliveryLocation(UserLocationModel location) {
@@ -128,9 +198,11 @@ class CheckoutController extends GetxController {
     _calculateTotals(); // Recalculate totals karena biaya pengiriman mungkin berubah
   }
 
-  // Method untuk mengubah metode pembayaran
-  void setPaymentMethod(String method) {
-    selectedPaymentMethod.value = method;
+  // Method untuk mengupdate lokasi yang dipilih dari AddressSelectionPage
+  void updateSelectedLocation(UserLocationModel location) {
+    selectedLocation.value = location;
+    _calculateTotals(); // Recalculate totals jika lokasi diubah
+    update(); // Memperbarui UI
   }
 
   @override

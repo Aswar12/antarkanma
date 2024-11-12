@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 class UserLocationModel {
@@ -218,6 +217,8 @@ class UserLocationModel {
       deletedAt,
     );
   }
+
+  UserLocationModel? get value => null;
 
   @override
   String toString() {

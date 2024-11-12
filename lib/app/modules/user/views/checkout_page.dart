@@ -1,29 +1,28 @@
+import 'dart:math';
+import 'package:antarkanma/app/controllers/user_location_controller.dart';
+import 'package:antarkanma/app/data/models/order_item_model.dart';
+import 'package:antarkanma/app/modules/user/views/address_selection_page.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:antarkanma/app/controllers/checkout_controller.dart';
 import 'package:antarkanma/app/data/models/user_location_model.dart';
-import 'package:antarkanma/app/data/models/transaction_model.dart';
-import 'package:antarkanma/app/data/models/order_model.dart';
-import 'package:antarkanma/app/data/models/order_item_model.dart';
 import 'package:intl/intl.dart';
 
 class CheckoutPage extends GetView<CheckoutController> {
-  const CheckoutPage({Key? key}) : super(key: key);
+  final UserLocationController locationController =
+      Get.find<UserLocationController>();
+  CheckoutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor8,
       appBar: AppBar(
+        toolbarHeight: Dimenssions.height50,
         backgroundColor: backgroundColor8,
-        iconTheme: IconThemeData(
-          color: logoColorSecondary,
-        ),
-        title: Text(
-          'Checkout',
-          style: primaryTextStyle,
-        ),
+        iconTheme: IconThemeData(color: logoColorSecondary),
+        title: Text('Checkout', style: primaryTextStyle),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -31,20 +30,18 @@ class CheckoutPage extends GetView<CheckoutController> {
         }
 
         return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDeliveryAddressSection(),
-                const SizedBox(height: 16),
-                _buildOrderItemsSection(),
-                const SizedBox(height: 16),
-                _buildPaymentSection(),
-                const SizedBox(height: 16),
-                _buildTotalSection(),
-              ],
-            ),
+          padding: EdgeInsets.all(Dimenssions.width10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDeliveryAddressSection(),
+              const SizedBox(height: 16),
+              _buildOrderItemsSection(),
+              const SizedBox(height: 16),
+              _buildPaymentSection(),
+              const SizedBox(height: 16),
+              _buildTotalSection(),
+            ],
           ),
         );
       }),
@@ -63,89 +60,94 @@ class CheckoutPage extends GetView<CheckoutController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Alamat Pengiriman',
-                  style: primaryTextStyle,
-                ),
+                Text('Alamat Pengiriman', style: primaryTextStyle),
                 TextButton(
-                  onPressed: () => Get.toNamed('/address-selection'),
-                  child: Text(
-                    'Ubah',
-                    style: primaryTextStyle,
-                  ),
+                  onPressed: () => _showAddressSelectionModal(),
+                  child: Text('Ubah', style: primaryTextStyle),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Obx(() => controller.selectedLocation.value != null
-                ? _buildAddressCard(controller.selectedLocation.value!)
-                : _buildNoAddressWidget()),
+            Obx(() {
+              final location = locationController.selectedLocation.value;
+              return location != null
+                  ? _buildAddressCard(location)
+                  : _buildNoAddressWidget();
+            }),
           ],
         ),
       ),
     );
   }
 
+  void _showAddressSelectionModal() {
+    showModalBottomSheet(
+      context: Get.context!,
+      builder: (context) {
+        return AddressSelectionPage();
+      },
+    ).then((result) {
+      if (result != null) {
+        // Memperbarui lokasi yang dipilih
+        controller.updateSelectedLocation(result as UserLocationModel);
+      }
+    });
+  }
+
   Widget _buildAddressCard(UserLocationModel location) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return Card(
+      elevation: 2,
+      color: backgroundColor8,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              location.addressLabel,
-              style: primaryTextStyle.copyWith(fontWeight: FontWeight.bold),
-            ),
-            if (location.isDefault)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Utama',
-                  style: primaryTextStyle.copyWith(
-                    color: logoColor,
-                    fontSize: 12,
+            Row(
+              children: [
+                Text(location.addressLabel,
+                    style:
+                        primaryTextStyle.copyWith(fontWeight: FontWeight.bold)),
+                if (location.isDefault)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(4)),
+                    child: Text('Utama',
+                        style: primaryTextStyle.copyWith(
+                            color: logoColor, fontSize: 12)),
                   ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(location.customerName ?? '', style: primaryTextStyle),
+            Text(location.formattedPhoneNumber, style: primaryTextStyle),
+            const SizedBox(height: 4),
+            Text(location.fullAddress, style: primaryTextStyle),
+            if (location.notes?.isNotEmpty ?? false)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Catatan: ${location.notes}',
+                  style: primaryTextStyle.copyWith(fontStyle: FontStyle.italic),
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          location.customerName ?? '',
-          style: primaryTextStyle,
-        ),
-        Text(
-          location.formattedPhoneNumber,
-          style: primaryTextStyle,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          location.fullAddress,
-          style: primaryTextStyle,
-        ),
-        if (location.notes?.isNotEmpty ?? false) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Catatan: ${location.notes}',
-            style: primaryTextStyle.copyWith(fontStyle: FontStyle.italic),
-          ),
-        ],
-      ],
+      ),
     );
   }
 
   Widget _buildNoAddressWidget() {
     return InkWell(
-      onTap: () => Get.toNamed('/address-selection'),
+      onTap: () => Get.toNamed('/main/select-address'),
       child: Card(
         color: backgroundColor8,
         elevation: 2,
-        margin: EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 8),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -156,7 +158,7 @@ class CheckoutPage extends GetView<CheckoutController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: logoColorSecondary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -211,41 +213,14 @@ class CheckoutPage extends GetView<CheckoutController> {
     return Card(
       color: backgroundColor8,
       elevation: 2,
-      margin: EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                item.product.firstImageUrl,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 80,
-                    height: 80,
-                    color: Colors.grey[300],
-                    child: Icon(Icons.error, color: Colors.red),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: 80,
-                    height: 80,
-                    color: Colors.grey[200],
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                },
-              ),
-            ),
-            SizedBox(width: 12),
-            // Product Details
+            _buildProductImage(item),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +234,7 @@ class CheckoutPage extends GetView<CheckoutController> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     'Merchant: ${item.merchantName}',
                     style: primaryTextStyle.copyWith(
@@ -268,7 +243,7 @@ class CheckoutPage extends GetView<CheckoutController> {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -324,30 +299,158 @@ class CheckoutPage extends GetView<CheckoutController> {
     );
   }
 
-  Widget _buildPaymentMethodCard(String method) {
-    return ListTile(
-      tileColor: backgroundColor8,
-      title: Text(
-        method,
-        style: primaryTextStyle,
+  Widget _buildProductImage(OrderItemModel item) {
+    final imageUrl = item.product.firstImageUrl;
+    final hasValidImage =
+        imageUrl.isNotEmpty && Uri.tryParse(imageUrl)?.isAbsolute == true;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: hasValidImage
+          ? Image.network(
+              imageUrl,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildPlaceholderImage();
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return _buildLoadingImage();
+              },
+            )
+          : _buildPlaceholderImage(),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(8),
       ),
-      trailing: TextButton(
-        onPressed: () => Get.toNamed('/payment-selection'),
-        child: Text(
-          'Ubah',
-          style: primaryTextStyle,
+      child: Center(
+        child: Icon(
+          Icons.image_not_supported,
+          color: Colors.grey[600],
+          size: 40,
         ),
       ),
     );
   }
 
+  Widget _buildLoadingImage() {
+    return Container(
+      width: 80,
+      height: 80,
+      color: Colors.grey[200],
+      child: Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(logoColorSecondary),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodCard(String method) {
+    return Card(
+      color: backgroundColor8,
+      child: ListTile(
+        leading: Icon(
+          _getPaymentMethodIcon(method),
+          color: logoColorSecondary,
+        ),
+        title: Text(method, style: primaryTextStyle),
+        trailing: TextButton(
+          onPressed: () => _showPaymentMethodSelection(),
+          child: Text('Ubah', style: primaryTextStyle),
+        ),
+      ),
+    );
+  }
+
+  IconData _getPaymentMethodIcon(String method) {
+    switch (method) {
+      case 'COD':
+        return Icons.handshake_outlined; // Ikon untuk COD
+      case 'Transfer Bank':
+        return Icons.account_balance; // Ikon untuk transfer bank
+      case 'DANA':
+        return Icons.account_balance_wallet; // Ikon untuk DANA
+      case 'OVO':
+        return Icons.wallet_giftcard; // Ikon untuk OVO
+      case 'GoPay':
+        return Icons.payment; // Ikon untuk GoPay
+      default:
+        return Icons.payment; // Ikon default
+    }
+  }
+
+  void _showPaymentMethodSelection() {
+    showModalBottomSheet(
+      context: Get.context!,
+      builder: (context) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16.0),
+            topRight: Radius.circular(16.0),
+          ),
+          child: Container(
+            color: backgroundColor1,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Pilih Metode Pembayaran',
+                    style: primaryTextStyle.copyWith(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                Obx(() {
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: controller.paymentMethods.length,
+                    itemBuilder: (context, index) {
+                      final method = controller.paymentMethods[index];
+                      return ListTile(
+                        leading: Icon(
+                          _getPaymentMethodIcon(method),
+                          color: logoColorSecondary,
+                        ),
+                        title: Text(
+                          method,
+                          style: primaryTextStyle,
+                        ),
+                        trailing:
+                            controller.selectedPaymentMethod.value == method
+                                ? Icon(Icons.check, color: logoColorSecondary)
+                                : null,
+                        onTap: () {
+                          controller.setPaymentMethod(method);
+                          Get.back(); // Tutup modal
+                        },
+                      );
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildNoPaymentMethodWidget() {
     return InkWell(
-      onTap: () => Get.toNamed('/payment-selection'),
+      onTap: () => _showPaymentMethodSelection(),
       child: Card(
         color: backgroundColor8,
         elevation: 2,
-        margin: EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 8),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -358,7 +461,7 @@ class CheckoutPage extends GetView<CheckoutController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: logoColorSecondary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -430,8 +533,8 @@ class CheckoutPage extends GetView<CheckoutController> {
 
   Widget _buildCheckoutButton() {
     return Card(
-      // Menggunakan Card untuk konsistensi bayangan
-      margin: EdgeInsets.zero, // Menghilangkan margin default Card
+      elevation: 2,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(Dimenssions.radius20),
@@ -456,10 +559,8 @@ class CheckoutPage extends GetView<CheckoutController> {
                 ),
                 Text(
                   NumberFormat.currency(
-                    locale: 'id_ID',
-                    symbol: 'Rp ',
-                    decimalDigits: 0,
-                  ).format(controller.total.value),
+                          locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+                      .format(controller.total.value),
                   style: primaryTextStyle.copyWith(
                     fontSize: Dimenssions.font18,
                     fontWeight: FontWeight.bold,
@@ -468,85 +569,74 @@ class CheckoutPage extends GetView<CheckoutController> {
                 ),
               ],
             ),
-            SizedBox(height: 16),
-            Card(
-              // Menggunakan Card untuk tombol juga
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ElevatedButton(
-                onPressed: controller.canCheckout
-                    ? () => controller.processCheckout()
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: logoColorSecondary,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey[300],
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  minimumSize: const Size(double.infinity, 54),
-                  padding: EdgeInsets.zero,
+            const SizedBox(height: 16),
+            Obx(() {
+              return Card(
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    gradient: controller.canCheckout
-                        ? LinearGradient(
-                            colors: [
-                              logoColorSecondary,
-                              logoColorSecondary.withOpacity(0.8),
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          )
-                        : null,
+                child: ElevatedButton(
+                  onPressed: controller.canCheckout
+                      ? () => controller.processCheckout()
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: logoColorSecondary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey[300],
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(double.infinity, 54),
+                    padding: EdgeInsets.zero,
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.shopping_cart_checkout,
-                          color: controller.canCheckout
-                              ? logoColor
-                              : logoColorSecondary,
-                          size: 24,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          controller.canCheckout
-                              ? 'Bayar Sekarang'
-                              : 'Lengkapi Pesanan',
-                          style: primaryTextStyle.copyWith(
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: controller.canCheckout
+                          ? LinearGradient(
+                              colors: [
+                                logoColorSecondary,
+                                logoColorSecondary.withOpacity(0.8),
+                              ],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            )
+                          : null,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_cart_checkout,
                             color: controller.canCheckout
                                 ? logoColor
                                 : logoColorSecondary,
-                            fontSize: Dimenssions.font16,
-                            fontWeight: FontWeight.bold,
+                            size: 24,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Text(
+                            controller.canCheckout
+                                ? 'Bayar Sekarang'
+                                : 'Lengkapi Pesanan',
+                            style: primaryTextStyle.copyWith(
+                              color: controller.canCheckout
+                                  ? logoColor
+                                  : logoColorSecondary,
+                              fontSize: Dimenssions.font16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            if (!controller.canCheckout)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Lengkapi alamat dan metode pembayaran',
-                  style: primaryTextStyle.copyWith(
-                    color: Colors.red[400],
-                    fontSize: Dimenssions.font12,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              );
+            }),
           ],
         ),
       ),

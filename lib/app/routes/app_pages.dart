@@ -4,13 +4,11 @@ import 'package:antarkanma/app/controllers/cart_controller.dart';
 import 'package:antarkanma/app/modules/auth/auth_binding.dart';
 import 'package:antarkanma/app/modules/auth/views/sign_in_page.dart';
 import 'package:antarkanma/app/modules/auth/views/sign_up_page.dart';
-import 'package:antarkanma/app/modules/merchant/merchant_binding.dart';
-import 'package:antarkanma/app/modules/courier/courier_binding.dart';
-import 'package:antarkanma/app/modules/merchant/views/merchant_main_page.dart';
 import 'package:antarkanma/app/modules/splash/views/splash_page.dart';
 import 'package:antarkanma/app/modules/user/user_binding.dart';
 import 'package:antarkanma/app/modules/user/views/add_edit_address_page.dart';
 import 'package:antarkanma/app/modules/user/views/address_page.dart';
+import 'package:antarkanma/app/modules/user/views/address_selection_page.dart';
 import 'package:antarkanma/app/modules/user/views/cart_page.dart';
 import 'package:antarkanma/app/modules/user/views/chat_page.dart';
 import 'package:antarkanma/app/modules/user/views/checkout_page.dart';
@@ -21,7 +19,6 @@ import 'package:antarkanma/app/modules/user/views/product_detail_page.dart';
 import 'package:antarkanma/app/modules/user/views/profile_page.dart';
 import 'package:antarkanma/app/modules/user/views/user_main_page.dart';
 import 'package:get/get.dart';
-import 'package:get/get_navigation/src/routes/get_route.dart';
 
 abstract class Routes {
   static const splash = '/splash';
@@ -114,12 +111,16 @@ class AppPages {
           page: () => AddEditAddressPage(),
         ),
         GetPage(
+          name: '/select-address',
+          page: () => AddressSelectionPage(),
+        ),
+        GetPage(
           name: '/map-picker',
           page: () => const MapPickerView(),
         ),
         GetPage(
           name: '/checkout',
-          page: () => const CheckoutPage(), // Halaman Checkout
+          page: () => CheckoutPage(), // Halaman Checkout
           binding: UserBinding(), // Bindings sesuai kebutuhan
         ),
       ],

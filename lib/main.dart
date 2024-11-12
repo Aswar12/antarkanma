@@ -8,7 +8,7 @@ import 'app/bindings/initial_binding.dart';
 import 'package:get_storage/get_storage.dart';
 
 Future<void> main() async {
-  Get.testMode = true;
+  WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   runApp(const MyApp());
 }

@@ -11,7 +11,7 @@ class ProductTile extends StatelessWidget {
   final Function()? onTap;
 
   const ProductTile({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.name,
     required this.price,
@@ -19,7 +19,7 @@ class ProductTile extends StatelessWidget {
     required this.rating,
     required this.reviews,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

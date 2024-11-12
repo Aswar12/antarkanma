@@ -11,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -22,18 +23,6 @@ class ProductDetailPage extends GetView<ProductDetailController> {
   void _addToCart() {
     try {
       print("Entering _addToCart");
-
-      // Validasi product dan merchant
-      if (controller.product.value == null) {
-        print("Product is null");
-        showCustomSnackbar(
-          title: 'Error',
-          message: 'Data produk tidak valid',
-          backgroundColor: Colors.red,
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        return;
-      }
 
       final merchant = controller.product.value.merchant;
       if (merchant == null) {
@@ -80,8 +69,17 @@ class ProductDetailPage extends GetView<ProductDetailController> {
     }
   }
 
+  Future<void> _initializeDateFormatting() async {
+    try {
+      await initializeDateFormatting('id_ID', null);
+    } catch (e) {
+      print('Error initializing date formatting: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _initializeDateFormatting();
     final product = Get.arguments as ProductModel;
 
     controller.setProduct(product);
@@ -190,7 +188,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
-            offset: Offset(0, 1),
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -440,7 +438,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
   }
 
   Widget _buildVariantSelector(ProductModel product) {
-    if (product.variants.isEmpty) return SizedBox();
+    if (product.variants.isEmpty) return const SizedBox();
 
     return Container(
       margin: EdgeInsets.symmetric(vertical: Dimenssions.height15),
@@ -481,7 +479,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
                       ),
                       child: Column(
                         children: [
-                          Container(
+                          SizedBox(
                             height: Dimenssions.height20,
                             width: Dimenssions.width55,
                             child: Row(
@@ -514,17 +512,16 @@ class ProductDetailPage extends GetView<ProductDetailController> {
                               ],
                             ),
                           ),
-                          if (variant.priceAdjustment != null)
-                            Text(
-                              '+ Rp ${variant.priceAdjustment}',
-                              style: TextStyle(
-                                color: controller.selectedVariant.value?.id ==
-                                        variant.id
-                                    ? Colors.white
-                                    : logoColorSecondary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          Text(
+                            '+ Rp ${variant.priceAdjustment}',
+                            style: TextStyle(
+                              color: controller.selectedVariant.value?.id ==
+                                      variant.id
+                                  ? Colors.white
+                                  : logoColorSecondary,
+                              fontWeight: FontWeight.bold,
                             ),
+                          ),
                         ],
                       ),
                     ),
@@ -619,7 +616,8 @@ class ProductDetailPage extends GetView<ProductDetailController> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.shopping_cart_checkout, color: Colors.white, size: 18),
+              const Icon(Icons.shopping_cart_checkout,
+                  color: Colors.white, size: 18),
               SizedBox(width: Dimenssions.width10),
               Text(
                 'Beli Sekarang',
@@ -803,7 +801,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
   Widget _buildProductInfo(ProductModel product) {
     return Container(
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
@@ -843,7 +841,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
           ),
         ),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: product.status == 'ACTIVE'
                 ? Colors.green.withOpacity(0.1)
@@ -879,7 +877,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
           );
         }),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: logoColorSecondary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
@@ -960,7 +958,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
           Row(
             children: [
               Icon(Icons.location_on, color: logoColorSecondary),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   product.merchant?.address ?? 'No address available',
@@ -975,7 +973,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
           Row(
             children: [
               Icon(Icons.phone, color: logoColorSecondary),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 product.merchant?.phoneNumber ?? 'No phone number',
                 style: TextStyle(
@@ -1027,7 +1025,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
   // Quantity Selector
   Widget _buildQuantitySelector() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 16),
+      margin: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
           Text(
@@ -1071,7 +1069,7 @@ class ProductDetailPage extends GetView<ProductDetailController> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(7),
+        padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
           color: logoColorSecondary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),

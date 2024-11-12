@@ -7,11 +7,11 @@ class CustomInputField extends StatefulWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
   final bool initialObscureText;
-  final dynamic? icon; // Bisa menerima String (path) atau Icon
+  final dynamic icon; // Bisa menerima String (path) atau Icon
   final bool showVisibilityToggle;
 
   const CustomInputField({
-    Key? key,
+    super.key,
     required this.label,
     required this.hintText,
     required this.controller,
@@ -19,7 +19,7 @@ class CustomInputField extends StatefulWidget {
     this.initialObscureText = false,
     required this.icon, // Ubah iconPath menjadi icon
     this.showVisibilityToggle = false,
-  }) : super(key: key);
+  });
 
   @override
   _CustomInputFieldState createState() => _CustomInputFieldState();

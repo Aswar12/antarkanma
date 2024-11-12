@@ -30,8 +30,6 @@ class UserBinding extends Bindings {
       () => UserLocationService(),
       fenix: true,
     );
-
-    Get.lazyPut(() => CheckoutController());
     Get.lazyPut<MapPickerController>(() => MapPickerController());
     Get.lazyPut<UserLocationController>(
       () => UserLocationController(
@@ -39,6 +37,7 @@ class UserBinding extends Bindings {
       ),
       fenix: true,
     );
+    Get.lazyPut<CheckoutController>(() => CheckoutController());
 
     // Additional Feature Controllers
     _initializeFeatureControllers();

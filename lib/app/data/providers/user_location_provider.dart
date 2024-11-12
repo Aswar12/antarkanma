@@ -10,6 +10,7 @@ class UserLocationProvider {
     _setupInterceptors();
   }
 
+  // Setup dasar untuk Dio
   void _setupBaseOptions() {
     _dio.options = BaseOptions(
       baseUrl: baseUrl,
@@ -19,6 +20,7 @@ class UserLocationProvider {
     );
   }
 
+  // Setup interceptor untuk menangani request dan response
   void _setupInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -40,6 +42,7 @@ class UserLocationProvider {
     );
   }
 
+  // Menghandle error dari response
   void _handleError(DioException error) {
     String message;
     switch (error.response?.statusCode) {
@@ -56,11 +59,11 @@ class UserLocationProvider {
     throw Exception(message);
   }
 
-  // Get all user locations
+  // Mendapatkan semua lokasi pengguna
   Future<Response> getUserLocations(String token) async {
     try {
       return await _dio.get(
-        '/user/locations',
+        '/user-locations',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -70,11 +73,11 @@ class UserLocationProvider {
     }
   }
 
-  // Get single user location
+  // Mendapatkan lokasi pengguna berdasarkan ID
   Future<Response> getUserLocation(String token, int locationId) async {
     try {
       return await _dio.get(
-        '/user/locations/$locationId',
+        '/user-locations/$locationId',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -84,7 +87,7 @@ class UserLocationProvider {
     }
   }
 
-  // Add new user location
+  // Menambahkan lokasi pengguna baru
   Future<Response> addUserLocation(
       String token, Map<String, dynamic> data) async {
     try {
@@ -100,7 +103,7 @@ class UserLocationProvider {
     }
   }
 
-  // Update user location
+  // Memperbarui lokasi pengguna
   Future<Response> updateUserLocation(
       String token, int locationId, Map<String, dynamic> data) async {
     try {
@@ -116,7 +119,7 @@ class UserLocationProvider {
     }
   }
 
-  // Delete user location
+  // Menghapus lokasi pengguna
   Future<Response> deleteUserLocation(String token, int locationId) async {
     try {
       return await _dio.delete(
@@ -130,10 +133,10 @@ class UserLocationProvider {
     }
   }
 
-  // Set default location
+  // Mengatur lokasi default
   Future<Response> setDefaultLocation(String token, int locationId) async {
     try {
-      return await _dio.put(
+      return await _dio.post(
         '/user-locations/$locationId/set-default',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
@@ -144,7 +147,7 @@ class UserLocationProvider {
     }
   }
 
-  // Get nearby locations (optional)
+  // Lanjutan metode sebelumnya
   Future<Response> getNearbyLocations(
       String token, double latitude, double longitude,
       {double radius = 5000}) async {
@@ -165,7 +168,65 @@ class UserLocationProvider {
     }
   }
 
-  // Bulk delete locations (optional)
+// Pencarian lokasi berdasarkan kriteria
+  Future<Response> searchLocations(
+    String token, {
+    String? keyword,
+    String? addressType,
+    bool? isDefault,
+    String? city,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+
+      if (keyword != null) queryParams['keyword'] = keyword;
+      if (addressType != null) queryParams['address_type'] = addressType;
+      if (isDefault != null) queryParams['is_default'] = isDefault;
+      if (city != null) queryParams['city'] = city;
+
+      return await _dio.get(
+        '/user-locations/search',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+        queryParameters: queryParams,
+      );
+    } catch (e) {
+      throw Exception('Failed to search locations: $e');
+    }
+  }
+
+// Validasi alamat
+  Future<Response> validateAddress(
+      String token, Map<String, dynamic> addressData) async {
+    try {
+      return await _dio.post(
+        '/user-locations/validate',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+        data: addressData,
+      );
+    } catch (e) {
+      throw Exception('Failed to validate address: $e');
+    }
+  }
+
+// Mendapatkan statistik lokasi pengguna
+  Future<Response> getLocationStatistics(String token) async {
+    try {
+      return await _dio.get(
+        '/user/locations/statistics',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+    } catch (e) {
+      throw Exception('Failed to get location statistics: $e');
+    }
+  }
+
+// Operasi bulk delete lokasi
   Future<Response> bulkDeleteLocations(
       String token, List<int> locationIds) async {
     try {
@@ -181,48 +242,67 @@ class UserLocationProvider {
     }
   }
 
-  // Search locations by keyword (optional)
-  Future<Response> searchLocations(String token, String keyword) async {
+// Mendapatkan lokasi berdasarkan tipe alamat
+  Future<Response> getLocationsByAddressType(
+      String token, String addressType) async {
     try {
       return await _dio.get(
-        '/user-locations/search',
+        '/user-locations/by-type',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
-        queryParameters: {'keyword': keyword},
+        queryParameters: {'address_type': addressType},
       );
     } catch (e) {
-      throw Exception('Failed to search locations: $e');
+      throw Exception('Failed to get locations by address type: $e');
     }
   }
 
-  // Validate address (optional)
-  Future<Response> validateAddress(
-      String token, Map<String, dynamic> data) async {
+// Metode untuk menambahkan koordinat ke lokasi
+  Future<Response> addLocationCoordinates(
+      String token, int locationId, double latitude, double longitude) async {
     try {
       return await _dio.post(
-        '/user/locations/validate',
+        '/user-locations/$locationId/coordinates',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
-        data: data,
+        data: {'latitude': latitude, 'longitude': longitude},
       );
     } catch (e) {
-      throw Exception('Failed to validate address: $e');
+      throw Exception('Failed to add location coordinates: $e');
     }
   }
 
-  // Get user location statistics (optional)
-  Future<Response> getLocationStatistics(String token) async {
+// Metode untuk mengekspor lokasi pengguna
+  Future<Response> exportUserLocations(String token) async {
     try {
       return await _dio.get(
-        '/user/locations/statistics',
+        '/user-locations/export',
         options: Options(
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/pdf' // Misalnya untuk export PDF
+          },
         ),
       );
     } catch (e) {
-      throw Exception('Failed to get location statistics: $e');
+      throw Exception('Failed to export user locations: $e');
+    }
+  }
+
+// Metode untuk mendapatkan lokasi terakhir yang dikunjungi
+  Future<Response> getRecentLocations(String token, {int limit = 5}) async {
+    try {
+      return await _dio.get(
+        '/user-locations/recent',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+        queryParameters: {'limit': limit},
+      );
+    } catch (e) {
+      throw Exception('Failed to get recent locations: $e');
     }
   }
 }

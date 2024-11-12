@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import 'package:antarkanma/app/constants/app_colors.dart';
 
 class MapPickerView extends StatefulWidget {
-  const MapPickerView({Key? key}) : super(key: key);
+  const MapPickerView({super.key});
 
   @override
   State<MapPickerView> createState() => _MapPickerViewState();

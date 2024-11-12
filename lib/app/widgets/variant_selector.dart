@@ -10,18 +10,18 @@ class VariantSelector extends StatelessWidget {
   final Function(VariantModel) onVariantSelected;
 
   const VariantSelector({
-    Key? key,
+    super.key,
     required this.variants,
     this.selectedVariant,
     required this.onVariantSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Pilih Varian',
           style: TextStyle(
             fontWeight: FontWeight.bold,

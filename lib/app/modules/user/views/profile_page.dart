@@ -13,7 +13,7 @@ class ProfilePage extends GetView<AuthController> {
   final AuthService authService = Get.find<AuthService>();
   late final UserLocationController locationController;
 
-  ProfilePage({Key? key}) : super(key: key) {
+  ProfilePage({super.key}) {
     if (!Get.isRegistered<UserLocationController>()) {
       Get.put(UserLocationController(
           locationService: Get.find<UserLocationService>()));
@@ -30,6 +30,108 @@ class ProfilePage extends GetView<AuthController> {
           _buildContent(authService),
         ],
       ),
+    );
+  }
+
+  Widget _buildAddressCard() {
+    return GetBuilder<UserLocationController>(
+      builder: (locationController) {
+        return Card(
+          color: backgroundColor2,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Dimenssions.radius15),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(Dimenssions.width15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Alamat Pengiriman',
+                      style: primaryTextStyle.copyWith(
+                        fontSize: Dimenssions.font16,
+                        fontWeight: semiBold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Get.toNamed('/main/address'),
+                      child: Text(
+                        'Lihat Semua',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: Dimenssions.font14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: Dimenssions.height10),
+                if (locationController.defaultAddress != null) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: primaryColor,
+                        size: Dimenssions.font20,
+                      ),
+                      SizedBox(width: Dimenssions.width10),
+                      Expanded(
+                        child: Obx(() => Text(
+                              locationController.defaultAddress!.fullAddress,
+                              style: secondaryTextStyle.copyWith(
+                                fontSize: Dimenssions.font14,
+                              ),
+                            )),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  Text(
+                    'Tambahkan alamat pengiriman Anda untuk memudahkan proses pengiriman',
+                    style: secondaryTextStyle.copyWith(
+                      fontSize: Dimenssions.font14,
+                    ),
+                  ),
+                  SizedBox(height: Dimenssions.height15),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (Get.isRegistered<UserLocationController>()) {
+                          Get.toNamed('/main/add-address');
+                        } else {
+                          Get.snackbar('Error', 'Controller tidak ditemukan');
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: EdgeInsets.symmetric(
+                          vertical: Dimenssions.height10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(Dimenssions.radius15),
+                        ),
+                      ),
+                      child: Text(
+                        'Tambah Alamat',
+                        style: primaryTextStyle.copyWith(
+                          fontSize: Dimenssions.font14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -162,109 +264,6 @@ class ProfilePage extends GetView<AuthController> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAddressCard() {
-    return GetBuilder<UserLocationController>(
-      builder: (locationController) {
-        return Card(
-          color: backgroundColor2,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Dimenssions.radius15),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(Dimenssions.width15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Alamat Pengiriman',
-                      style: primaryTextStyle.copyWith(
-                        fontSize: Dimenssions.font16,
-                        fontWeight: semiBold,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => Get.toNamed('/main/address'),
-                      child: Text(
-                        'Lihat Semua',
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontSize: Dimenssions.font14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (locationController.addresses != null &&
-                    locationController.addresses!.isNotEmpty) ...[
-                  SizedBox(height: Dimenssions.height10),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        color: primaryColor,
-                        size: Dimenssions.font20,
-                      ),
-                      SizedBox(width: Dimenssions.width10),
-                      Expanded(
-                        child: Text(
-                          locationController.addresses!.first.fullAddress,
-                          style: secondaryTextStyle.copyWith(
-                            fontSize: Dimenssions.font14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ] else ...[
-                  SizedBox(height: Dimenssions.height10),
-                  Text(
-                    'Tambahkan alamat pengiriman Anda untuk memudahkan proses pengiriman',
-                    style: secondaryTextStyle.copyWith(
-                      fontSize: Dimenssions.font14,
-                    ),
-                  ),
-                  SizedBox(height: Dimenssions.height15),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (Get.isRegistered<UserLocationController>()) {
-                          Get.toNamed('/main/add-address');
-                        } else {
-                          Get.snackbar('Error', 'Controller tidak ditemukan');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: EdgeInsets.symmetric(
-                            vertical: Dimenssions.height10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(Dimenssions.radius15),
-                        ),
-                      ),
-                      child: Text(
-                        'Tambah Alamat',
-                        style: primaryTextStyle.copyWith(
-                          fontSize: Dimenssions.font14,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 

@@ -9,7 +9,7 @@ import 'package:geocoding/geocoding.dart';
 import '../utils/location_permission_handler.dart';
 
 class MapPickerController extends GetxController {
-  final selectedLocation = LatLng(-4.6275392, 119.5871827).obs;
+  final selectedLocation = const LatLng(-4.6275392, 119.5871827).obs;
   final isLoading = false.obs;
   final currentAddress = ''.obs;
   final Rx<MapController> mapController = MapController().obs;
@@ -230,7 +230,7 @@ class MapPickerController extends GetxController {
   void initializeMap() {
     // Inisialisasi peta dengan lokasi default atau lokasi terakhir yang diketahui
     selectedLocation.value =
-        LatLng(-4.6275392, 119.5871827); // Contoh koordinat default
+        const LatLng(-4.6275392, 119.5871827); // Contoh koordinat default
     mapController.value.move(selectedLocation.value, 15.0);
 
     // Kemudian coba dapatkan lokasi saat ini

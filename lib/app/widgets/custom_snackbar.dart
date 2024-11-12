@@ -26,7 +26,7 @@ void showCustomSnackbar({
       color: Colors.white,
     ),
     shouldIconPulse: true,
-    duration: Duration(seconds: 3),
+    duration: const Duration(seconds: 3),
     isDismissible: true,
     dismissDirection: DismissDirection.horizontal,
     forwardAnimationCurve: Curves.easeOutBack,

@@ -11,6 +11,8 @@ import 'package:latlong2/latlong.dart';
 class AddEditAddressPage extends GetView<UserLocationController> {
   final UserLocationModel? address = Get.arguments;
 
+  AddEditAddressPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final isEditing = address != null;
@@ -32,7 +34,7 @@ class AddEditAddressPage extends GetView<UserLocationController> {
 class AddressForm extends StatefulWidget {
   final UserLocationModel? address;
 
-  AddressForm({this.address});
+  AddressForm({super.key, this.address});
 
   @override
   _AddressFormState createState() => _AddressFormState();
@@ -117,7 +119,7 @@ class _AddressFormState extends State<AddressForm> {
               fontWeight: medium,
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Container(
             height: 50,
             decoration: BoxDecoration(
@@ -130,13 +132,13 @@ class _AddressFormState extends State<AddressForm> {
             ),
             child: Row(
               children: [
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Image.asset(
                   'assets/icon_your_address.png',
                   width: 17,
                   color: value != null ? logoColorSecondary : Colors.grey,
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -164,7 +166,7 @@ class _AddressFormState extends State<AddressForm> {
                     ),
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
               ],
             ),
           ),
@@ -214,8 +216,9 @@ class _AddressFormState extends State<AddressForm> {
             controller: _postalCodeController,
             validator: (value) {
               if (value!.isEmpty) return 'Kode pos harus diisi';
-              if (!RegExp(r'^\d{5}$').hasMatch(value))
+              if (!RegExp(r'^\d{5}$').hasMatch(value)) {
                 return 'Kode pos harus 5 digit';
+              }
               return null;
             },
             icon: const Icon(Icons.local_post_office_rounded),
@@ -241,7 +244,7 @@ class _AddressFormState extends State<AddressForm> {
                     fontWeight: medium,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Container(
                   height: Dimenssions
                       .height90, // Tinggi yang lebih besar untuk multiple lines
@@ -271,7 +274,7 @@ class _AddressFormState extends State<AddressForm> {
                                   : Colors.grey,
                         ),
                       ),
-                      SizedBox(width: 16),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Focus(
                           onFocusChange: (hasFocus) {
@@ -289,7 +292,7 @@ class _AddressFormState extends State<AddressForm> {
                               hintStyle: subtitleTextStyle,
                               border: InputBorder.none,
                               contentPadding:
-                                  EdgeInsets.only(top: 16, right: 16),
+                                  const EdgeInsets.only(top: 16, right: 16),
                             ),
                           ),
                         ),
@@ -313,7 +316,7 @@ class _AddressFormState extends State<AddressForm> {
                     fontWeight: medium,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Container(
                   height: 50,
                   decoration: BoxDecoration(
@@ -328,7 +331,7 @@ class _AddressFormState extends State<AddressForm> {
                   ),
                   child: Row(
                     children: [
-                      SizedBox(width: 16),
+                      const SizedBox(width: 16),
                       Icon(
                         Icons.location_city, // atau icon lain yang sesuai
                         size: 17,
@@ -336,7 +339,7 @@ class _AddressFormState extends State<AddressForm> {
                             ? logoColorSecondary
                             : Colors.grey,
                       ),
-                      SizedBox(width: 16),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -370,7 +373,7 @@ class _AddressFormState extends State<AddressForm> {
                           ),
                         ),
                       ),
-                      SizedBox(width: 16),
+                      const SizedBox(width: 16),
                     ],
                   ),
                 ),
@@ -462,7 +465,7 @@ class _AddressFormState extends State<AddressForm> {
                   ),
                 ),
               ),
-              SizedBox(width: 10), // Spasi antara tombol
+              const SizedBox(width: 10), // Spasi antara tombol
               Expanded(
                 child: ElevatedButton(
                   onPressed: _submitForm,

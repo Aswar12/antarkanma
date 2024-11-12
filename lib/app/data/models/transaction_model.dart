@@ -336,7 +336,7 @@ class TransactionModel {
 
     // Asumsi pengiriman membutuhkan 2 hari kerja setelah pembayaran
     if (paymentDate != null) {
-      final estimatedDate = paymentDate!.add(Duration(days: 2));
+      final estimatedDate = paymentDate!.add(const Duration(days: 2));
       return DateFormat('dd MMMM yyyy').format(estimatedDate);
     }
 

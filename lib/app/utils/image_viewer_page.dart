@@ -8,11 +8,11 @@ class ImageViewerPage extends StatefulWidget {
   final int initialIndex;
   final String heroTagPrefix;
   const ImageViewerPage({
-    Key? key,
+    super.key,
     required this.imageUrls,
     this.initialIndex = 0,
     required this.heroTagPrefix,
-  }) : super(key: key);
+  });
 
   @override
   State<ImageViewerPage> createState() => _ImageViewerPageState();
@@ -122,7 +122,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
                 },
                 itemCount: widget.imageUrls.length,
                 loadingBuilder: (context, event) => Center(
-                  child: Container(
+                  child: SizedBox(
                     width: 20.0,
                     height: 20.0,
                     child: CircularProgressIndicator(

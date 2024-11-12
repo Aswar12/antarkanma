@@ -36,7 +36,7 @@ class ProductService extends GetxService {
           DateTime.now().difference(DateTime.parse(lastRefresh)).inHours > 1;
 
       if (storedProducts != null && storedProducts is List && !shouldRefresh) {
-        products.value = (storedProducts as List)
+        products.value = (storedProducts)
             .map((json) => ProductModel.fromJson(json))
             .toList();
       } else {

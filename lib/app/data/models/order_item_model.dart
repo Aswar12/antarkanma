@@ -7,7 +7,7 @@ import 'package:antarkanma/app/data/models/merchant_model.dart';
 
 class OrderItemModel {
   final String? id;
-  final String orderId;
+  late final String orderId;
   final ProductModel product;
   final MerchantModel merchant; // Mengganti merchantId dengan MerchantModel
   final int quantity;
