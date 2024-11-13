@@ -5,14 +5,28 @@ import 'package:antarkanma/app/data/providers/transaction_provider.dart';
 class TransactionService extends GetxService {
   final TransactionProvider _transactionProvider = TransactionProvider();
 
-  Future<bool> createTransaction(TransactionModel transaction) async {
+  Future<TransactionModel?> createTransaction(
+      TransactionModel transaction) async {
     try {
       final response =
           await _transactionProvider.createTransaction(transaction.toJson());
-      return response.statusCode == 201; // HTTP 201 Created
+
+      if (response.statusCode == 201) {
+        // Parsing data transaksi dari response
+        // Sesuaikan dengan struktur response backend Anda
+        final createdTransaction =
+            TransactionModel.fromJson(response.data['data'] ?? response.data);
+
+        return createdTransaction;
+      }
+
+      // Log error jika status code bukan 201
+      print(
+          'Failed to create transaction. Status code: ${response.statusCode}');
+      return null;
     } catch (e) {
       print('Error creating transaction: $e');
-      return false;
+      return null;
     }
   }
 

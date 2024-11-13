@@ -1,3 +1,4 @@
+import 'package:antarkanma/app/controllers/auth_controller.dart';
 import 'package:antarkanma/app/controllers/cart_controller.dart';
 import 'package:antarkanma/app/controllers/checkout_controller.dart';
 import 'package:antarkanma/app/controllers/homepage_controller.dart';
@@ -5,6 +6,7 @@ import 'package:antarkanma/app/controllers/map_picker_controller.dart';
 import 'package:antarkanma/app/controllers/product_detail_controller.dart';
 import 'package:antarkanma/app/controllers/user_location_controller.dart';
 import 'package:antarkanma/app/controllers/user_main_controller.dart';
+import 'package:antarkanma/app/services/transaction_service.dart';
 import 'package:antarkanma/app/services/user_location_service.dart';
 import 'package:get/get.dart';
 import 'package:antarkanma/app/controllers/user_controller.dart';
@@ -37,8 +39,13 @@ class UserBinding extends Bindings {
       ),
       fenix: true,
     );
-    Get.lazyPut<CheckoutController>(() => CheckoutController());
-
+    Get.lazyPut<CheckoutController>(
+      () => CheckoutController(
+        userLocationController: Get.find<UserLocationController>(),
+        authController: Get.find<AuthController>(),
+      ),
+    );
+    Get.lazyPut(() => TransactionService());
     // Additional Feature Controllers
     _initializeFeatureControllers();
   }

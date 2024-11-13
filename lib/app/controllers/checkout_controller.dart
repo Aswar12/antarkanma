@@ -1,4 +1,5 @@
 import 'package:antarkanma/app/data/models/transaction_model.dart';
+import 'package:antarkanma/app/modules/user/views/payment_method_selection_page.dart';
 import 'package:antarkanma/app/services/order_item_service.dart';
 import 'package:antarkanma/app/services/transaction_service.dart';
 import 'package:flutter/material.dart';
@@ -7,14 +8,17 @@ import 'package:antarkanma/app/data/models/order_item_model.dart';
 import 'package:antarkanma/app/data/models/cart_item_model.dart';
 import 'package:antarkanma/app/controllers/cart_controller.dart';
 import 'package:antarkanma/app/data/models/user_location_model.dart';
-import 'package:antarkanma/app/controllers/auth_controller.dart'; // Import AuthController
+import 'package:antarkanma/app/controllers/auth_controller.dart';
 import 'user_location_controller.dart';
 
 class CheckoutController extends GetxController {
-  final UserLocationController userLocationController =
-      Get.find<UserLocationController>();
-  final AuthController authController =
-      Get.find<AuthController>(); // Inisialisasi AuthController
+  final UserLocationController userLocationController;
+  final AuthController authController;
+
+  CheckoutController(
+      {required this.userLocationController, required this.authController});
+
+  // Observable properties
   final isLoading = false.obs;
   final orderItems = <OrderItemModel>[].obs;
   final selectedLocation = Rx<UserLocationModel?>(null);
@@ -31,20 +35,106 @@ class CheckoutController extends GetxController {
     'GoPay',
   ];
 
-  void selectPaymentMethod(String method) {
-    selectedPaymentMethod.value = method;
-  }
-
   @override
   void onInit() {
     super.onInit();
-    selectedLocation.value = userLocationController.defaultAddress;
+
+    // Prioritaskan lokasi yang dipilih dari UserLocationController
+    _initializeCheckoutLocation();
+
+    // Inisialisasi lainnya
     _initializeCheckout();
+
+    // Tambahkan listener untuk perubahan lokasi
+    ever(userLocationController.selectedLocation, (location) {
+      if (location != null) {
+        setDeliveryLocation(location);
+      }
+    });
   }
 
-  void loadDefaultLocation() {
+  void _initializeCheckoutLocation() {
+    // Prioritas:
+    // 1. Lokasi yang dipilih di UserLocationController
+    // 2. Alamat default
+    // 3. Alamat pertama dalam daftar
+    final selectedLocation = userLocationController.selectedLocation.value;
     final defaultLocation = userLocationController.defaultAddress;
-    selectedLocation.value = defaultLocation; // Set default address
+    final firstLocation = userLocationController.userLocations.isNotEmpty
+        ? userLocationController.userLocations.first
+        : null;
+
+    UserLocationModel? priorityLocation;
+
+    if (selectedLocation != null) {
+      priorityLocation = selectedLocation;
+    } else if (defaultLocation != null) {
+      priorityLocation = defaultLocation;
+    } else if (firstLocation != null) {
+      priorityLocation = firstLocation;
+    }
+
+    if (priorityLocation != null) {
+      // Set lokasi yang dipilih
+      this.selectedLocation.value = priorityLocation;
+
+      // Pastikan lokasi juga diset di UserLocationController
+      userLocationController.setSelectedLocation(priorityLocation);
+    }
+  }
+
+  // Method untuk mengupdate lokasi pengiriman
+  void setDeliveryLocation(UserLocationModel location) {
+    // Update lokasi di CheckoutController
+    selectedLocation.value = location;
+
+    // Pastikan lokasi juga diupdate di UserLocationController
+    userLocationController.setSelectedLocation(location);
+
+    // Hitung ulang total biaya jika perlu
+    _calculateTotals();
+
+    // Perbarui UI
+    update();
+  }
+
+  // Method untuk memilih lokasi baru
+  void updateSelectedLocation(UserLocationModel location) {
+    // Gunakan method setDeliveryLocation untuk konsistensi
+    setDeliveryLocation(location);
+  }
+
+  // Tambahkan method untuk mendapatkan daftar lokasi
+  List<UserLocationModel> get availableLocations {
+    return userLocationController.userLocations;
+  }
+
+  // Method untuk menambah lokasi baru
+  Future<bool> addNewLocation(UserLocationModel newLocation) async {
+    // Tambah lokasi melalui UserLocationController
+    final result = await userLocationController.addAddress(newLocation);
+
+    if (result) {
+      // Set lokasi baru sebagai lokasi terpilih
+      setDeliveryLocation(newLocation);
+    }
+
+    return result;
+  }
+
+  // Pastikan method lain yang terkait dengan lokasi tetap konsisten
+  bool get canCheckout {
+    return selectedLocation.value != null &&
+        orderItems.isNotEmpty &&
+        selectedPaymentMethod.value != null;
+  }
+
+  String? get checkoutBlockReason {
+    if (selectedLocation.value == null) {
+      return 'Pilih alamat pengiriman';
+    }
+    // Kondisi lain tetap sama
+    return null;
   }
 
   void _initializeCheckout() {
@@ -54,155 +144,252 @@ class CheckoutController extends GetxController {
         final merchantItems =
             args['merchantItems'] as Map<int, List<CartItemModel>>;
 
-        // Convert merchant items ke order items
-        for (var entry in merchantItems.entries) {
-          for (var cartItem in entry.value) {
-            final orderItem = OrderItemModel(
-              orderId: '', // Akan diisi setelah order dibuat
-              product: cartItem.product,
-              merchant: cartItem.merchant,
-              quantity: cartItem.quantity,
-              price: cartItem.price,
-              selectedVariantId: cartItem.selectedVariantId?.toString(),
-              status: 'PENDING',
-              createdAt: DateTime.now(),
-            );
-            orderItems.add(orderItem);
-          }
-        }
+        orderItems.value = merchantItems.entries.expand((entry) {
+          return entry.value.map((cartItem) => OrderItemModel(
+                orderId: '',
+                product: cartItem.product,
+                merchant: cartItem.merchant,
+                quantity: cartItem.quantity,
+                price: cartItem.price,
+                selectedVariantId: cartItem.selectedVariantId?.toString(),
+                status: 'PENDING',
+                createdAt: DateTime.now(),
+              ));
+        }).toList();
+
         _calculateTotals();
       }
     } catch (e) {
-      print('Error initializing checkout: $e');
-      Get.snackbar(
-        'Error',
-        'Terjadi kesalahan saat memuat data checkout',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _handleInitializationError(e);
     }
   }
 
+  void _handleInitializationError(dynamic error) {
+    print('Error initializing checkout: $error');
+    Get.snackbar(
+      'Error',
+      'Terjadi kesalahan saat memuat data checkout',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   void _calculateTotals() {
-    // Hitung subtotal
     subtotal.value = orderItems.fold(
       0.0,
       (sum, item) => sum + (item.price * item.quantity),
     );
 
-    // Hitung biaya pengiriman
-    deliveryFee.value = orderItems.isEmpty ? 0.0 : 10000.0;
-
-    // Hitung total
+    // Perhitungan biaya pengiriman yang lebih fleksibel
+    deliveryFee.value = _calculateDeliveryFee();
     total.value = subtotal.value + deliveryFee.value;
   }
 
-  // Getter untuk mengecek apakah checkout bisa dilakukan
-  bool get canCheckout {
-    return orderItems.isNotEmpty &&
-        selectedPaymentMethod.value != null &&
-        selectedLocation.value != null;
+  double _calculateDeliveryFee() {
+    if (orderItems.isEmpty) return 0.0;
+
+    // Logika perhitungan biaya pengiriman yang lebih kompleks
+
+    // Contoh perhitungan: 10000 untuk berat pertama 1kg, tambahan 5000 per kg
+    return 10000.0;
   }
 
-  // Method untuk memproses checkout
   Future<void> processCheckout() async {
-    if (!canCheckout) {
-      Get.snackbar(
-        'Peringatan',
-        'Mohon lengkapi semua data checkout',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
+    isLoading.value = true;
 
     try {
-      isLoading.value = true;
+      if (!_validateCheckoutData()) return;
 
-      // Ambil userId dari AuthController
-      final userId = userLocationController
-          .selectedLocation.value?.userId; // Ambil c dar AuthController
-      final deliveryLocationId =
-          selectedLocation.value?.id; // Ambil ID lokasi pengiriman
+      final transaction = _createTransactionModel();
+      final createdTransaction = await _saveTransaction(transaction);
 
-      // Buat objek TransactionModel
-      final transaction = TransactionModel(
-        orderId: '', // Akan diisi setelah order dibuat
-        userId: userId.toString(),
-        userLocationId: deliveryLocationId.toString(),
-        totalPrice: total.value,
-        shippingPrice: deliveryFee.value,
-        paymentMethod: selectedPaymentMethod.value!,
-        status: 'PENDING',
-      );
+      if (createdTransaction == null) return;
 
-      // Simulasi delay proses
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Simpan transaksi ke backend
-      final transactionService = Get.find<TransactionService>();
-      final isTransactionCreated =
-          await transactionService.createTransaction(transaction);
-
-      if (!isTransactionCreated) {
-        Get.snackbar('Error', 'Gagal membuat transaksi');
-        return;
-      }
-
-      // Simpan setiap order item
-      final orderItemService = Get.find<OrderItemService>();
-      for (var orderItem in orderItems) {
-        orderItem.orderId =
-            transaction.id.toString(); // Set orderId untuk setiap order item
-        final isOrderItemCreated =
-            await orderItemService.createOrderItem(orderItem);
-        if (!isOrderItemCreated) {
-          Get.snackbar(
-              'Error', 'Gagal menyimpan order item: ${orderItem.product.name}');
-          return;
-        }
-      }
-
-      // Clear cart setelah checkout berhasil
-      Get.find<CartController>().clearCart();
-
-      // Navigate ke halaman sukses
-      Get.offNamed('/checkout-success', arguments: {
-        'orderItems': orderItems,
-        'total': total.value,
-        'deliveryAddress': selectedLocation.value,
-        'paymentMethod': selectedPaymentMethod.value,
-        'userId': userId, // Sertakan userId dalam argumen
-        'deliveryLocationId':
-            deliveryLocationId, // Sertakan ID lokasi pengiriman
-      });
+      await _saveOrderItems(createdTransaction);
+      _clearCart();
+      _navigateToSuccessPage(createdTransaction);
     } catch (e) {
-      print('Error processing checkout: $e');
-      Get.snackbar(
-        'Error',
-        'Gagal memproses checkout: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _handleCheckoutError(e);
     } finally {
       isLoading.value = false;
     }
   }
-  // Misalkan ini adalah variabel untuk menyimpan metode pembayaran
 
-  // Metode untuk mengatur metode pembayaran
+  bool _validateCheckoutData() {
+    // Gabungkan validasi dalam satu method
+    final validationErrors = <String>[];
+
+    if (orderItems.isEmpty) {
+      validationErrors.add('Keranjang belanja kosong');
+    }
+
+    final userId = userLocationController.selectedLocation.value?.userId;
+    if (userId == null) {
+      validationErrors.add('User ID tidak valid');
+    }
+
+    final deliveryLocationId = selectedLocation.value?.id;
+    if (deliveryLocationId == null) {
+      validationErrors.add('Lokasi pengiriman tidak valid');
+    }
+
+    final paymentMethod = selectedPaymentMethod.value;
+    if (paymentMethod == null) {
+      validationErrors.add('Metode pembayaran belum dipilih');
+    }
+
+    if (validationErrors.isNotEmpty) {
+      _showValidationErrorSnackbar(validationErrors);
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showValidationErrorSnackbar(List<String> errors) {
+    Get.snackbar(
+      'Validasi Gagal',
+      errors.join('\n'),
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  // Method lainnya tetap sama seperti sebelumnya...
+
+  // Tambahkan method untuk menangani error dengan lebih baik
+  void _handleCheckoutError(dynamic error) {
+    print('Checkout error: $error');
+
+    // Tampilkan pesan error yang lebih informatif
+    Get.snackbar(
+      'Error',
+      'Gagal memproses checkout: ${_getErrorMessage(error)}',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  String _getErrorMessage(dynamic error) {
+    // Tambahkan logika penanganan error yang lebih spesifik
+    if (error is String) return error;
+    if (error is Exception) return error.toString();
+    return 'Terjadi kesalahan tidak dikenal';
+  }
+
+  TransactionModel _createTransactionModel() {
+    final userId = userLocationController.selectedLocation.value!.userId;
+    final deliveryLocationId = selectedLocation.value!.id;
+    final paymentMethod = selectedPaymentMethod.value!;
+
+    return TransactionModel(
+      userId: userId.toString(),
+      userLocationId: deliveryLocationId.toString(),
+      totalPrice: total.value,
+      shippingPrice: deliveryFee.value,
+      paymentMethod: paymentMethod,
+      status: 'PENDING',
+      orderId: '', // Backend akan generate
+    );
+  }
+
+  Future<TransactionModel?> _saveTransaction(
+      TransactionModel transaction) async {
+    try {
+      final transactionService = Get.find<TransactionService>();
+      final createdTransaction =
+          await transactionService.createTransaction(transaction);
+
+      if (createdTransaction == null) {
+        _showSnackbar('Error', 'Gagal membuat transaksi');
+        return null;
+      }
+
+      return createdTransaction;
+    } catch (e) {
+      _showSnackbar('Error', 'Gagal menyimpan transaksi: ${e.toString()}');
+      return null;
+    }
+  }
+
+  Future<void> _saveOrderItems(TransactionModel transaction) async {
+    final orderItemService = Get.find<OrderItemService>();
+
+    for (var orderItem in orderItems) {
+      try {
+        // Set order ID dari transaksi yang baru dibuat
+        orderItem.orderId =
+            transaction.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+        final isOrderItemCreated =
+            await orderItemService.createOrderItem(orderItem);
+
+        if (!isOrderItemCreated) {
+          throw Exception(
+              'Gagal menyimpan order item: ${orderItem.product?.name ?? "Produk"}');
+        }
+      } catch (e) {
+        _showSnackbar('Error', 'Gagal menyimpan order item: ${e.toString()}');
+        rethrow;
+      }
+    }
+  }
+
+  void _clearCart() {
+    try {
+      Get.find<CartController>().clearCart();
+    } catch (e) {
+      print('Error clearing cart: $e');
+    }
+  }
+
+  void _navigateToSuccessPage(TransactionModel transaction) {
+    Get.offNamed('/checkout-success', arguments: {
+      'transaction': transaction,
+      'orderItems': orderItems,
+      'total': total.value,
+      'deliveryAddress': selectedLocation.value,
+    });
+  }
+
+  void _showSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.error,
+      colorText: Colors.white,
+    );
+  }
+
   void setPaymentMethod(String method) {
     selectedPaymentMethod.value = method;
+    update(); // Memperbarui UI jika diperlukan
   }
 
-  // Method untuk mengubah lokasi pengiriman
-  void setDeliveryLocation(UserLocationModel location) {
-    selectedLocation.value = location;
-    _calculateTotals(); // Recalculate totals karena biaya pengiriman mungkin berubah
+  void autoSetInitialValues() {
+    // Pastikan alamat default sudah diset
+    if (selectedLocation.value == null) {
+      _initializeCheckoutLocation();
+    }
+
+    // Pastikan metode pembayaran sudah diset
+    if (selectedPaymentMethod.value == null && paymentMethods.isNotEmpty) {
+      setPaymentMethod(paymentMethods.first);
+    }
+
+    update();
   }
 
-  // Method untuk mengupdate lokasi yang dipilih dari AddressSelectionPage
-  void updateSelectedLocation(UserLocationModel location) {
-    selectedLocation.value = location;
-    _calculateTotals(); // Recalculate totals jika lokasi diubah
-    update(); // Memperbarui UI
+  void showPaymentMethodModal() async {
+    final result = await Get.to(() => const PaymentMethodSelectionPage());
+
+    if (result != null && result is String) {
+      setPaymentMethod(result);
+    }
   }
 
   @override

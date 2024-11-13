@@ -180,6 +180,23 @@ class UserLocationController extends GetxController {
     selectedLocation.value = location;
   }
 
+  void setSelectedLocation(UserLocationModel location) {
+    // Pastikan lokasi yang dipilih ada dalam daftar lokasi
+    final existingLocation =
+        userLocations.firstWhereOrNull((loc) => loc.id == location.id);
+
+    if (existingLocation != null) {
+      selectedLocation.value = existingLocation;
+      update(); // Memperbarui UI
+    } else {
+      // Jika lokasi tidak ditemukan, tambahkan ke daftar
+      addAddress(location).then((_) {
+        // Set lokasi yang baru ditambahkan sebagai lokasi terpilih
+        selectedLocation.value = location;
+      });
+    }
+  }
+
   // Method tambahan untuk sinkronisasi dan pembersihan
   Future<void> syncLocations() async {
     await _locationService.syncLocations();

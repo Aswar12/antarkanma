@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:antarkanma/app/controllers/user_location_controller.dart';
 import 'package:antarkanma/app/data/models/order_item_model.dart';
 import 'package:antarkanma/app/modules/user/views/address_selection_page.dart';
+import 'package:antarkanma/app/modules/user/views/payment_method_selection_page.dart';
 import 'package:antarkanma/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,7 +13,8 @@ import 'package:intl/intl.dart';
 class CheckoutPage extends GetView<CheckoutController> {
   final UserLocationController locationController =
       Get.find<UserLocationController>();
-  CheckoutPage({super.key});
+
+  CheckoutPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,29 +26,163 @@ class CheckoutPage extends GetView<CheckoutController> {
         iconTheme: IconThemeData(color: logoColorSecondary),
         title: Text('Checkout', style: primaryTextStyle),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      body: GetX<CheckoutController>(
+        builder: (controller) {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(Dimenssions.width10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDeliveryAddressSection(),
-              const SizedBox(height: 16),
-              _buildOrderItemsSection(),
-              const SizedBox(height: 16),
-              _buildPaymentSection(),
-              const SizedBox(height: 16),
-              _buildTotalSection(),
-            ],
-          ),
-        );
-      }),
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(Dimenssions.width10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDeliveryAddressSection(),
+                const SizedBox(height: 16),
+                _buildOrderItemsSection(),
+                const SizedBox(height: 16),
+                _buildPaymentSection(),
+                const SizedBox(height: 16),
+                _buildTotalSection(),
+              ],
+            ),
+          );
+        },
+      ),
       bottomNavigationBar: _buildCheckoutButton(),
     );
+  }
+
+// Dalam method _buildPaymentSection
+  Widget _buildPaymentSection() {
+    return Card(
+      color: backgroundColor1,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Metode Pembayaran',
+              style: primaryTextStyle.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Obx(() {
+              final selectedMethod = controller.selectedPaymentMethod.value;
+              return selectedMethod != null
+                  ? _buildPaymentMethodCard(selectedMethod)
+                  : _buildNoPaymentMethodWidget();
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentMethodSelectionModal() {
+    showModalBottomSheet(
+      context: Get.context!,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: Get.height * 0.7, // Maksimal 70% tinggi layar
+        minHeight: Get.height * 0.4, // Minimal 40% tinggi layar
+        maxWidth: Get.width, // Lebar penuh
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white, // Warna latar belakang
+      barrierColor: Colors.black54, // Warna overlay
+      builder: (context) => const PaymentMethodSelectionPage(),
+    ).then((selectedMethod) {
+      if (selectedMethod != null) {
+        controller.setPaymentMethod(selectedMethod);
+      }
+    });
+  }
+
+// Perbarui _buildNoPaymentMethodWidget
+  Widget _buildNoPaymentMethodWidget() {
+    return InkWell(
+      onTap: _showPaymentMethodSelectionModal,
+      child: Card(
+        color: backgroundColor8,
+        elevation: 2,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: logoColorSecondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.payment,
+                  color: logoColorSecondary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Pilih Metode Pembayaran',
+                style: primaryTextStyle.copyWith(
+                  fontSize: Dimenssions.font16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// Perbarui _buildPaymentMethodCard
+// Di dalam class CheckoutPage
+  Widget _buildPaymentMethodCard(String method) {
+    return Card(
+      color: backgroundColor8,
+      child: ListTile(
+        leading: Icon(
+          _getPaymentMethodIcon(method), // Gunakan method yang baru ditambahkan
+          color: logoColorSecondary,
+        ),
+        title: Text(method, style: primaryTextStyle),
+        trailing: TextButton(
+          onPressed: _showPaymentMethodSelectionModal,
+          child: Text('Ubah', style: primaryTextStyle),
+        ),
+      ),
+    );
+  }
+
+// Method baru untuk mengambil ikon metode pembayaran
+  IconData _getPaymentMethodIcon(String method) {
+    switch (method) {
+      case 'COD':
+        return Icons.handshake_outlined; // Ikon untuk COD
+      case 'Transfer Bank':
+        return Icons.account_balance; // Ikon untuk transfer bank
+      case 'DANA':
+        return Icons.account_balance_wallet; // Ikon untuk DANA
+      case 'OVO':
+        return Icons.wallet_giftcard; // Ikon untuk OVO
+      case 'GoPay':
+        return Icons.payment; // Ikon untuk GoPay
+      default:
+        return Icons.payment; // Ikon default
+    }
   }
 
   Widget _buildDeliveryAddressSection() {
@@ -57,38 +193,41 @@ class CheckoutPage extends GetView<CheckoutController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Alamat Pengiriman', style: primaryTextStyle),
-                TextButton(
-                  onPressed: () => _showAddressSelectionModal(),
-                  child: Text('Ubah', style: primaryTextStyle),
-                ),
-              ],
-            ),
+            _buildAddressHeader(),
             const SizedBox(height: 8),
-            Obx(() {
-              final location = locationController.selectedLocation.value;
-              return location != null
-                  ? _buildAddressCard(location)
-                  : _buildNoAddressWidget();
-            }),
+            GetX<UserLocationController>(
+              builder: (locationController) {
+                final location = locationController.selectedLocation.value;
+                return location != null
+                    ? _buildAddressCard(location)
+                    : _buildNoAddressWidget();
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
+  Row _buildAddressHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text('Alamat Pengiriman', style: primaryTextStyle),
+        TextButton(
+          onPressed: _showAddressSelectionModal,
+          child: Text('Ubah', style: primaryTextStyle),
+        ),
+      ],
+    );
+  }
+
   void _showAddressSelectionModal() {
     showModalBottomSheet(
       context: Get.context!,
-      builder: (context) {
-        return AddressSelectionPage();
-      },
+      builder: (context) => AddressSelectionPage(),
     ).then((result) {
       if (result != null) {
-        // Memperbarui lokasi yang dipilih
         controller.updateSelectedLocation(result as UserLocationModel);
       }
     });
@@ -103,30 +242,7 @@ class CheckoutPage extends GetView<CheckoutController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(location.addressLabel,
-                    style:
-                        primaryTextStyle.copyWith(fontWeight: FontWeight.bold)),
-                if (location.isDefault)
-                  Container(
-                    margin: const EdgeInsets.only(left: 8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(4)),
-                    child: Text('Utama',
-                        style: primaryTextStyle.copyWith(
-                            color: logoColor, fontSize: 12)),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(location.customerName ?? '', style: primaryTextStyle),
-            Text(location.formattedPhoneNumber, style: primaryTextStyle),
-            const SizedBox(height: 4),
-            Text(location.fullAddress, style: primaryTextStyle),
+            _buildAddressDetails(location),
             if (location.notes?.isNotEmpty ?? false)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -138,6 +254,36 @@ class CheckoutPage extends GetView<CheckoutController> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAddressDetails(UserLocationModel location) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(location.addressLabel,
+                style: primaryTextStyle.copyWith(fontWeight: FontWeight.bold)),
+            if (location.isDefault)
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(4)),
+                child: Text('Utama',
+                    style: primaryTextStyle.copyWith(
+                        color: logoColor, fontSize: 12)),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(location.customerName ?? '', style: primaryTextStyle),
+        Text(location.formattedPhoneNumber, style: primaryTextStyle),
+        const SizedBox(height: 4),
+        Text(location.fullAddress, style: primaryTextStyle),
+      ],
     );
   }
 
@@ -273,32 +419,6 @@ class CheckoutPage extends GetView<CheckoutController> {
     );
   }
 
-  Widget _buildPaymentSection() {
-    return Card(
-      color: backgroundColor1,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Metode Pembayaran',
-              style: primaryTextStyle.copyWith(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Obx(() => controller.selectedPaymentMethod.value != null
-                ? _buildPaymentMethodCard(
-                    controller.selectedPaymentMethod.value!)
-                : _buildNoPaymentMethodWidget()),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildProductImage(OrderItemModel item) {
     final imageUrl = item.product.firstImageUrl;
     final hasValidImage =
@@ -312,9 +432,8 @@ class CheckoutPage extends GetView<CheckoutController> {
               width: 80,
               height: 80,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return _buildPlaceholderImage();
-              },
+              errorBuilder: (context, error, stackTrace) =>
+                  _buildPlaceholderImage(),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return _buildLoadingImage();
@@ -351,137 +470,6 @@ class CheckoutPage extends GetView<CheckoutController> {
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation<Color>(logoColorSecondary),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentMethodCard(String method) {
-    return Card(
-      color: backgroundColor8,
-      child: ListTile(
-        leading: Icon(
-          _getPaymentMethodIcon(method),
-          color: logoColorSecondary,
-        ),
-        title: Text(method, style: primaryTextStyle),
-        trailing: TextButton(
-          onPressed: () => _showPaymentMethodSelection(),
-          child: Text('Ubah', style: primaryTextStyle),
-        ),
-      ),
-    );
-  }
-
-  IconData _getPaymentMethodIcon(String method) {
-    switch (method) {
-      case 'COD':
-        return Icons.handshake_outlined; // Ikon untuk COD
-      case 'Transfer Bank':
-        return Icons.account_balance; // Ikon untuk transfer bank
-      case 'DANA':
-        return Icons.account_balance_wallet; // Ikon untuk DANA
-      case 'OVO':
-        return Icons.wallet_giftcard; // Ikon untuk OVO
-      case 'GoPay':
-        return Icons.payment; // Ikon untuk GoPay
-      default:
-        return Icons.payment; // Ikon default
-    }
-  }
-
-  void _showPaymentMethodSelection() {
-    showModalBottomSheet(
-      context: Get.context!,
-      builder: (context) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16.0),
-            topRight: Radius.circular(16.0),
-          ),
-          child: Container(
-            color: backgroundColor1,
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Pilih Metode Pembayaran',
-                    style: primaryTextStyle.copyWith(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                Obx(() {
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: controller.paymentMethods.length,
-                    itemBuilder: (context, index) {
-                      final method = controller.paymentMethods[index];
-                      return ListTile(
-                        leading: Icon(
-                          _getPaymentMethodIcon(method),
-                          color: logoColorSecondary,
-                        ),
-                        title: Text(
-                          method,
-                          style: primaryTextStyle,
-                        ),
-                        trailing:
-                            controller.selectedPaymentMethod.value == method
-                                ? Icon(Icons.check, color: logoColorSecondary)
-                                : null,
-                        onTap: () {
-                          controller.setPaymentMethod(method);
-                          Get.back(); // Tutup modal
-                        },
-                      );
-                    },
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildNoPaymentMethodWidget() {
-    return InkWell(
-      onTap: () => _showPaymentMethodSelection(),
-      child: Card(
-        color: backgroundColor8,
-        elevation: 2,
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.withOpacity(0.3)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: logoColorSecondary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.payment,
-                  color: logoColorSecondary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Pilih Metode Pembayaran',
-                style: primaryTextStyle.copyWith(
-                  fontSize: Dimenssions.font16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -570,73 +558,89 @@ class CheckoutPage extends GetView<CheckoutController> {
               ],
             ),
             const SizedBox(height: 16),
-            Obx(() {
-              return Card(
-                margin: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ElevatedButton(
-                  onPressed: controller.canCheckout
-                      ? () => controller.processCheckout()
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: logoColorSecondary,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[300],
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    minimumSize: const Size(double.infinity, 54),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: controller.canCheckout
-                          ? LinearGradient(
-                              colors: [
-                                logoColorSecondary,
-                                logoColorSecondary.withOpacity(0.8),
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            )
-                          : null,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.shopping_cart_checkout,
-                            color: controller.canCheckout
-                                ? logoColor
-                                : logoColorSecondary,
-                            size: 24,
+            GetX<CheckoutController>(
+              builder: (controller) {
+                return Column(
+                  children: [
+                    Card(
+                      margin: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: controller.canCheckout
+                            ? () => controller.processCheckout()
+                            : () {
+                                // Tampilkan snackbar dengan alasan
+                                Get.snackbar(
+                                  'Checkout Tidak Tersedia',
+                                  controller.checkoutBlockReason ??
+                                      'Lengkapi data checkout',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.red.withOpacity(0.7),
+                                  colorText: Colors.white,
+                                );
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: logoColorSecondary,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey[300],
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            controller.canCheckout
-                                ? 'Bayar Sekarang'
-                                : 'Lengkapi Pesanan',
-                            style: primaryTextStyle.copyWith(
-                              color: controller.canCheckout
-                                  ? logoColor
-                                  : logoColorSecondary,
-                              fontSize: Dimenssions.font16,
-                              fontWeight: FontWeight.bold,
+                          minimumSize: const Size(double.infinity, 54),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Ink(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: controller.canCheckout
+                                ? LinearGradient(
+                                    colors: [
+                                      logoColorSecondary,
+                                      logoColorSecondary.withOpacity(0.8),
+                                    ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  )
+                                : null,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Center(
+                              child: Text(
+                                'Bayar Sekarang',
+                                style: primaryTextStyle.copyWith(
+                                  fontSize: Dimenssions.font18,
+                                  fontWeight: FontWeight.bold,
+                                  color: controller.canCheckout
+                                      ? Colors.white
+                                      : Colors.grey,
+                                ),
+                              ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            }),
+                    if (!controller.canCheckout)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          controller.checkoutBlockReason ??
+                              'Lengkapi data checkout',
+                          style: primaryTextStyle.copyWith(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
