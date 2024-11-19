@@ -1,5 +1,6 @@
 import 'package:antarkanma/app/data/models/transaction_model.dart';
 import 'package:antarkanma/app/modules/user/views/payment_method_selection_page.dart';
+import 'package:antarkanma/app/services/auth_service.dart';
 import 'package:antarkanma/app/services/order_item_service.dart';
 import 'package:antarkanma/app/services/transaction_service.dart';
 import 'package:flutter/material.dart';
@@ -197,16 +198,27 @@ class CheckoutController extends GetxController {
     isLoading.value = true;
 
     try {
-      if (!_validateCheckoutData()) return;
+      // Validasi data checkout
+      if (!_validateCheckoutData()) {
+        return;
+      }
 
+      // Buat model transaksi
       final transaction = _createTransactionModel();
-      final createdTransaction = await _saveTransaction(transaction);
 
-      if (createdTransaction == null) return;
+      // Simpan transaksi
+      final transactionService = Get.find<TransactionService>();
+      final createdTransaction =
+          await transactionService.createTransaction(transaction);
 
-      await _saveOrderItems(createdTransaction);
-      _clearCart();
-      _navigateToSuccessPage(createdTransaction);
+      if (createdTransaction != null) {
+        // Transaksi berhasil dibuat
+        _clearCart();
+        _navigateToSuccessPage(createdTransaction);
+      } else {
+        // Gagal membuat transaksi
+        _showSnackbar('Error', 'Gagal membuat transaksi');
+      }
     } catch (e) {
       _handleCheckoutError(e);
     } finally {
@@ -214,29 +226,88 @@ class CheckoutController extends GetxController {
     }
   }
 
+  TransactionModel _createTransactionModel() {
+    // Pastikan semua data yang diperlukan tersedia
+    if (selectedLocation.value == null) {
+      throw Exception('Lokasi pengiriman belum dipilih');
+    }
+
+    if (selectedPaymentMethod.value == null) {
+      throw Exception('Metode pembayaran belum dipilih');
+    }
+
+    // Validasi user
+    final authService = Get.find<AuthService>();
+    final userId = authService.userId;
+
+    if (userId == null) {
+      throw Exception('Pengguna tidak terautentikasi');
+    }
+
+    // Buat order ID sementara (backend akan mengganti)
+    final tempOrderId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    return TransactionModel(
+      orderId: tempOrderId,
+      userId: userId.toString(),
+      userLocationId: selectedLocation.value!.id.toString(),
+      totalPrice: subtotal.value,
+      shippingPrice: deliveryFee.value,
+      paymentMethod: _mapPaymentMethod(selectedPaymentMethod.value!),
+      status: 'PENDING',
+      paymentStatus: 'PENDING',
+    );
+  }
+
+  String _mapPaymentMethod(String method) {
+    // Sesuaikan metode pembayaran dengan yang diterima backend
+    switch (method) {
+      case 'COD':
+        return 'MANUAL';
+      case 'Transfer Bank':
+      case 'DANA':
+      case 'OVO':
+      case 'GoPay':
+        return 'ONLINE';
+      default:
+        return 'MANUAL';
+    }
+  }
+
   bool _validateCheckoutData() {
-    // Gabungkan validasi dalam satu method
     final validationErrors = <String>[];
 
+    // Validasi items
     if (orderItems.isEmpty) {
       validationErrors.add('Keranjang belanja kosong');
     }
 
-    final userId = userLocationController.selectedLocation.value?.userId;
-    if (userId == null) {
-      validationErrors.add('User ID tidak valid');
+    // Validasi lokasi
+    if (selectedLocation.value == null) {
+      validationErrors.add('Pilih alamat pengiriman');
     }
 
-    final deliveryLocationId = selectedLocation.value?.id;
-    if (deliveryLocationId == null) {
-      validationErrors.add('Lokasi pengiriman tidak valid');
+    // Validasi metode pembayaran
+    if (selectedPaymentMethod.value == null) {
+      validationErrors.add('Pilih metode pembayaran');
     }
 
-    final paymentMethod = selectedPaymentMethod.value;
-    if (paymentMethod == null) {
-      validationErrors.add('Metode pembayaran belum dipilih');
+    // Validasi setiap item
+    for (var item in orderItems) {
+      if (item.product?.id == null) {
+        validationErrors.add('Produk tidak valid');
+      }
+      if (item.merchant?.id == null) {
+        validationErrors.add('Merchant tidak valid');
+      }
+      if (item.quantity <= 0) {
+        validationErrors.add('Kuantitas produk tidak valid');
+      }
     }
 
+    // Validasi user
+
+    // Tampilkan error jika ada
     if (validationErrors.isNotEmpty) {
       _showValidationErrorSnackbar(validationErrors);
       return false;
@@ -244,6 +315,53 @@ class CheckoutController extends GetxController {
 
     return true;
   }
+
+  void _navigateToSuccessPage(TransactionModel transaction) {
+    Get.offNamed('/checkout-success', arguments: {
+      'transaction': transaction,
+      'orderItems': orderItems,
+      'total': total.value,
+      'deliveryAddress': selectedLocation.value,
+    });
+  }
+
+  void _handleCheckoutError(dynamic error) {
+    print('Checkout error: $error');
+
+    String errorMessage = 'Terjadi kesalahan tidak dikenal';
+
+    if (error is Exception) {
+      errorMessage = error.toString();
+    } else if (error is String) {
+      errorMessage = error;
+    }
+
+    Get.snackbar(
+      'Error',
+      'Gagal memproses checkout: $errorMessage',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  Map<int, List<OrderItemModel>> _groupItemsByMerchant() {
+    final Map<int, List<OrderItemModel>> merchantGroups = {};
+
+    for (var item in orderItems) {
+      if (item.merchant?.id != null) {
+        if (!merchantGroups.containsKey(item.merchant!.id)) {
+          merchantGroups[item.merchant!.id!] = [];
+        }
+        merchantGroups[item.merchant!.id!]!.add(item);
+      }
+    }
+
+    return merchantGroups;
+  }
+
+//
 
   void _showValidationErrorSnackbar(List<String> errors) {
     Get.snackbar(
@@ -258,42 +376,11 @@ class CheckoutController extends GetxController {
 
   // Method lainnya tetap sama seperti sebelumnya...
 
-  // Tambahkan method untuk menangani error dengan lebih baik
-  void _handleCheckoutError(dynamic error) {
-    print('Checkout error: $error');
-
-    // Tampilkan pesan error yang lebih informatif
-    Get.snackbar(
-      'Error',
-      'Gagal memproses checkout: ${_getErrorMessage(error)}',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 3),
-    );
-  }
-
   String _getErrorMessage(dynamic error) {
     // Tambahkan logika penanganan error yang lebih spesifik
     if (error is String) return error;
     if (error is Exception) return error.toString();
     return 'Terjadi kesalahan tidak dikenal';
-  }
-
-  TransactionModel _createTransactionModel() {
-    final userId = userLocationController.selectedLocation.value!.userId;
-    final deliveryLocationId = selectedLocation.value!.id;
-    final paymentMethod = selectedPaymentMethod.value!;
-
-    return TransactionModel(
-      userId: userId.toString(),
-      userLocationId: deliveryLocationId.toString(),
-      totalPrice: total.value,
-      shippingPrice: deliveryFee.value,
-      paymentMethod: paymentMethod,
-      status: 'PENDING',
-      orderId: '', // Backend akan generate
-    );
   }
 
   Future<TransactionModel?> _saveTransaction(
@@ -344,15 +431,6 @@ class CheckoutController extends GetxController {
     } catch (e) {
       print('Error clearing cart: $e');
     }
-  }
-
-  void _navigateToSuccessPage(TransactionModel transaction) {
-    Get.offNamed('/checkout-success', arguments: {
-      'transaction': transaction,
-      'orderItems': orderItems,
-      'total': total.value,
-      'deliveryAddress': selectedLocation.value,
-    });
   }
 
   void _showSnackbar(String title, String message) {
